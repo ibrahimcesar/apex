@@ -3,14 +3,14 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-/// apex - Reach the apex of cross-compilation 🎯
+/// xcargo - Cross-compilation made simple 🚀
 #[derive(Parser)]
-#[command(name = "apex")]
+#[command(name = "xcargo")]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
-    
+
     /// Enable verbose output
     #[arg(short, long, global = true)]
     verbose: bool,
@@ -94,12 +94,12 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     
     if cli.verbose {
-        println!("🎯 apex - Verbose mode enabled");
+        println!("🚀 xcargo - Verbose mode enabled");
     }
-    
+
     match cli.command {
         Commands::Init { dry_run } => {
-            println!("🎯 apex - Reach the apex of cross-compilation");
+            println!("🚀 xcargo - Cross-compilation made simple");
             println!();
             println!("Initializing cross-compilation setup...");
             if dry_run {

@@ -1,21 +1,21 @@
-//! # apex 🎯
+//! # xcargo 🚀
 //!
-//! > Reach the apex of cross-compilation
+//! > Cross-compilation made simple
 //!
-//! **apex** is a Rust cross-compilation tool that simplifies building for
+//! **xcargo** is a Rust cross-compilation tool that simplifies building for
 //! multiple targets through automatic toolchain management and intelligent
 //! container usage.
 //!
 //! ## Quick Start
 //!
 //! ```rust,ignore
-//! use apex::Target;
+//! use xcargo::Target;
 //!
 //! // Detect available targets
 //! let targets = Target::detect_installed()?;
 //!
 //! // Build for a specific target
-//! apex::build("x86_64-pc-windows-gnu")?;
+//! xcargo build --target x86_64-pc-windows-gnu
 //! ```
 
 #![warn(missing_docs)]
@@ -24,9 +24,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 /// Target platform definitions and detection
-pub mod target {
-    //! Target platform management
-}
+pub mod target;
 
 /// Toolchain installation and management
 pub mod toolchain {
@@ -97,10 +95,11 @@ pub mod prelude {
     //! Convenient re-exports
     //!
     //! ```rust
-    //! use apex::prelude::*;
+    //! use xcargo::prelude::*;
     //! ```
 
     pub use crate::error::{Error, Result};
+    pub use crate::target::{Target, TargetTier};
 }
 
 // Re-exports
@@ -108,8 +107,6 @@ pub use error::{Error, Result};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_placeholder() {
         // Placeholder test

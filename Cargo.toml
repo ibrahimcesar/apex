@@ -1,14 +1,14 @@
 [package]
-name = "apex-builder"
+name = "xcargo"
 version = "0.0.1"
 edition = "2021"
 rust-version = "1.70"
 authors = ["Ibrahim Cesar <email@ibrahimcesar.com>"]
 license = "MIT OR Apache-2.0"
-description = "Cross-compilation made simple - Reach the apex of cross-compilation"
-homepage = "https://github.com/ibrahimcesar/apex"
-repository = "https://github.com/ibrahimcesar/apex"
-documentation = "https://docs.rs/apex-builder"
+description = "Cross-compilation made simple - Build for any target with zero configuration"
+homepage = "https://github.com/ibrahimcesar/xcargo"
+repository = "https://github.com/ibrahimcesar/xcargo"
+documentation = "https://docs.rs/xcargo"
 keywords = [
     "cross-compilation",
     "build-tools",
@@ -20,11 +20,11 @@ categories = ["command-line-utilities", "development-tools::build-utils"]
 readme = "README.md"
 
 [lib]
-name = "apex"
+name = "xcargo"
 path = "src/lib.rs"
 
 [[bin]]
-name = "apex"
+name = "xcargo"
 path = "src/main.rs"
 
 [dependencies]
