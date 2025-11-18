@@ -1,15 +1,21 @@
 [package]
-name = "apex"
-version = "0.1.0"
+name = "apex-builder"
+version = "0.0.1"
 edition = "2021"
 rust-version = "1.70"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Ibrahim Cesar <email@ibrahimcesar.com>"]
 license = "MIT OR Apache-2.0"
 description = "Cross-compilation made simple - Reach the apex of cross-compilation"
-homepage = "https://github.com/yourusername/apex"
-repository = "https://github.com/yourusername/apex"
-documentation = "https://docs.rs/apex"
-keywords = ["cross-compilation", "build-tools", "toolchain", "cargo", "compiler"]
+homepage = "https://github.com/ibrahimcesar/apex"
+repository = "https://github.com/ibrahimcesar/apex"
+documentation = "https://docs.rs/apex-builder"
+keywords = [
+    "cross-compilation",
+    "build-tools",
+    "toolchain",
+    "cargo",
+    "compiler",
+]
 categories = ["command-line-utilities", "development-tools::build-utils"]
 readme = "README.md"
 
@@ -63,10 +69,10 @@ predicates = "3.1"
 default = []
 
 # Container runtime
-container = []  # ["dep:youki"]
+container = [] # ["dep:youki"]
 
 # Toolchain downloading
-download = []  # ["dep:reqwest"]
+download = [] # ["dep:reqwest"]
 
 # All features
 full = ["container", "download"]
