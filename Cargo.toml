@@ -49,6 +49,7 @@ which = "6.0"
 # Terminal output
 colored = "2.1"
 indicatif = "0.17"
+inquire = "0.7"
 
 # Future: Container runtime
 # youki = { version = "0.3", optional = true }

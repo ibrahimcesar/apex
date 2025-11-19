@@ -2,11 +2,13 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use inquire::{MultiSelect, Select, Confirm};
 use xcargo::build::{Builder, BuildOptions};
 use xcargo::config::Config;
 use xcargo::output::{helpers, tips};
 use xcargo::target::Target;
 use xcargo::toolchain::ToolchainManager;
+use std::path::Path;
 
 /// xcargo - Cross-compilation, zero friction 🎯
 #[derive(Parser)]
@@ -53,6 +55,13 @@ enum Commands {
         action: TargetAction,
     },
 
+    /// Initialize xcargo for a project
+    Init {
+        /// Interactive setup wizard
+        #[arg(short, long)]
+        interactive: bool,
+    },
+
     /// Display configuration
     Config {
         /// Show default config
@@ -92,6 +101,192 @@ enum TargetAction {
         /// Target triple
         target: String,
     },
+}
+
+/// Run basic non-interactive setup
+fn run_basic_setup() -> Result<()> {
+    helpers::section("Initialize xcargo");
+
+    if Path::new("xcargo.toml").exists() {
+        helpers::warning("xcargo.toml already exists");
+        let overwrite = Confirm::new("Overwrite existing configuration?")
+            .with_default(false)
+            .prompt()?;
+
+        if !overwrite {
+            helpers::info("Setup cancelled");
+            return Ok(());
+        }
+    }
+
+    let host = Target::detect_host()?;
+    let mut config = Config::default();
+    config.targets.default = vec![host.triple.clone()];
+
+    config.save("xcargo.toml")?;
+
+    helpers::success("Created xcargo.toml with default configuration");
+    helpers::tip(format!("Default target: {}", host.triple));
+    helpers::hint("Use 'xcargo init --interactive' for guided setup");
+
+    Ok(())
+}
+
+/// Run interactive TUI setup wizard
+fn run_interactive_setup() -> Result<()> {
+    use xcargo::output::colors;
+
+    println!("\n{}{}✨ xcargo Interactive Setup{}", colors::BOLD, colors::CYAN, colors::RESET);
+    println!("{}Let's configure cross-compilation for your project!{}\n", colors::DIM, colors::RESET);
+
+    // Check for existing config
+    if Path::new("xcargo.toml").exists() {
+        helpers::warning("xcargo.toml already exists");
+        let overwrite = Confirm::new("Overwrite existing configuration?")
+            .with_default(false)
+            .prompt()?;
+
+        if !overwrite {
+            helpers::info("Setup cancelled");
+            return Ok(());
+        }
+    }
+
+    // Detect host
+    let host = Target::detect_host()?;
+    helpers::success(format!("Detected host platform: {}", host.triple));
+    println!();
+
+    // Select target platforms
+    let target_options = vec![
+        ("Linux x86_64", "x86_64-unknown-linux-gnu"),
+        ("Linux x86_64 (musl)", "x86_64-unknown-linux-musl"),
+        ("Linux ARM64", "aarch64-unknown-linux-gnu"),
+        ("Windows x86_64 (GNU)", "x86_64-pc-windows-gnu"),
+        ("Windows x86_64 (MSVC)", "x86_64-pc-windows-msvc"),
+        ("macOS x86_64", "x86_64-apple-darwin"),
+        ("macOS ARM64 (M1/M2)", "aarch64-apple-darwin"),
+        ("WebAssembly", "wasm32-unknown-unknown"),
+    ];
+
+    let selected_names = MultiSelect::new(
+        "Which targets do you want to build for?",
+        target_options.iter().map(|(name, _)| *name).collect()
+    )
+    .with_help_message("Use ↑↓ to navigate, Space to select, Enter to confirm")
+    .prompt()?;
+
+    let selected_targets: Vec<String> = selected_names
+        .iter()
+        .filter_map(|&selected_name| {
+            target_options.iter()
+                .find(|(name, _)| name == &selected_name)
+                .map(|(_, triple)| triple.to_string())
+        })
+        .collect();
+
+    if selected_targets.is_empty() {
+        helpers::warning("No targets selected, using host target");
+    }
+
+    println!();
+
+    // Parallel builds
+    let parallel = Confirm::new("Enable parallel builds?")
+        .with_default(true)
+        .with_help_message("Build multiple targets concurrently for faster builds")
+        .prompt()?;
+
+    // Build caching
+    let cache = Confirm::new("Enable build caching?")
+        .with_default(true)
+        .with_help_message("Cache build artifacts to speed up subsequent builds")
+        .prompt()?;
+
+    // Container strategy
+    let container_options = vec![
+        "Auto (use containers only when necessary)",
+        "Always use containers",
+        "Never use containers",
+    ];
+
+    let container_choice = Select::new(
+        "Container build strategy:",
+        container_options
+    )
+    .with_help_message("Containers ensure reproducible builds")
+    .prompt()?;
+
+    let use_when = match container_choice {
+        "Auto (use containers only when necessary)" => "target.os != host.os",
+        "Always use containers" => "always",
+        "Never use containers" => "never",
+        _ => "target.os != host.os",
+    };
+
+    println!();
+    helpers::progress("Creating configuration...");
+
+    // Build configuration
+    let mut config = Config::default();
+    let host_triple = host.triple.clone();
+    config.targets.default = if selected_targets.is_empty() {
+        vec![host_triple.clone()]
+    } else {
+        selected_targets.clone()
+    };
+    config.build.parallel = parallel;
+    config.build.cache = cache;
+    config.container.use_when = use_when.to_string();
+
+    // Save configuration
+    config.save("xcargo.toml")?;
+
+    println!();
+    helpers::success("✨ Configuration created successfully!");
+    println!();
+
+    // Summary
+    helpers::section("Configuration Summary");
+    println!("Targets: {}", selected_targets.join(", "));
+    println!("Parallel builds: {}", if parallel { "enabled" } else { "disabled" });
+    println!("Build cache: {}", if cache { "enabled" } else { "disabled" });
+    println!("Container strategy: {}", use_when);
+    println!();
+
+    // Next steps
+    helpers::section("Next Steps");
+    helpers::tip("Run 'xcargo build' to build for your host platform");
+    helpers::tip("Run 'xcargo build --all' to build for all configured targets");
+    helpers::tip("Run 'xcargo target add <triple>' to add more targets");
+    println!();
+
+    // Offer to install targets
+    let install_now = Confirm::new("Install selected targets now?")
+        .with_default(true)
+        .prompt()?;
+
+    if install_now && !selected_targets.is_empty() {
+        println!();
+        helpers::progress("Installing targets...");
+        let manager = ToolchainManager::new()?;
+
+        for target in &selected_targets {
+            if target != &host_triple {
+                match manager.ensure_target("stable", target) {
+                    Ok(()) => helpers::success(format!("Installed {}", target)),
+                    Err(e) => helpers::warning(format!("Failed to install {}: {}", target, e)),
+                }
+            }
+        }
+
+        println!();
+        helpers::success("Setup complete! You're ready to cross-compile 🚀");
+    } else {
+        helpers::success("Setup complete! Install targets later with 'xcargo target add <triple>'");
+    }
+
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -248,6 +443,14 @@ fn main() -> Result<()> {
                 }
             }
         },
+
+        Commands::Init { interactive } => {
+            if interactive {
+                run_interactive_setup()?;
+            } else {
+                run_basic_setup()?;
+            }
+        }
 
         Commands::Config { default } => {
             helpers::section("Configuration");
