@@ -4,252 +4,365 @@
 
 _Cross-compilation, zero friction_
 
-**xcargo** is a Rust cross-compilation tool that simplifies building for multiple targets. Automatic toolchain management, intelligent container usage, and zero-configuration cross-compilation.
+**xcargo** is a Rust cross-compilation tool that just works. Automatic toolchain management, beautiful output, and zero-configuration cross-compilation.
+
+[![Crates.io](https://img.shields.io/crates/v/xcargo.svg)](https://crates.io/crates/xcargo)
+[![Documentation](https://docs.rs/xcargo/badge.svg)](https://docs.rs/xcargo)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[Installation](#-installation) | [Quick Start](#-quick-start) | [Documentation](https://ibrahimcesar.github.io/xcargo) | [Examples](#-usage-examples)
 
 </div>
 
-## 🎯 What is xcargo?
-
-Cross-compilation in Rust shouldn't be painful. **xcargo** automates the entire process:
-
-- **Detects** what you need automatically
-- **Installs** toolchains and dependencies
-- **Builds** for any target with one command
-- **Uses containers** only when necessary (includes embedded runtime)
-
-## ✨ Features (Planned)
+## ✨ Features
 
 - 🎯 **Zero Configuration** - Works out of the box for most targets
-- 🔧 **Auto-Detection** - Figures out what toolchains you need
-- 🐳 **Smart Containers** - Uses native builds when possible, containers when needed
-- ⚡ **Fast** - Parallel builds, intelligent caching
-- 🌍 **Many Targets** - Linux, Windows, macOS, mobile, embedded
+- 🔧 **Auto-Installation** - Automatically installs missing toolchains and targets
+- 🎨 **Beautiful Output** - Colored messages with helpful tips and hints
+- ⚡ **Smart Detection** - Figures out what you need automatically
+- 📦 **Interactive Setup** - TUI wizard for easy project configuration
+- 🌍 **Many Targets** - Linux, Windows, macOS, WebAssembly, and more
 - 🤖 **CI/CD Ready** - Perfect for GitHub Actions, GitLab CI
-- 📦 **Embedded Runtime** - No Docker Desktop required (uses youki)
 
-## 🚧 Status
+## 🚀 Quick Start
 
-**Work in Progress** - Early development
+### Installation
 
-Current version: `0.1.0-alpha`
-
-## 🚀 Quick Example (Planned API)
 ```bash
-# Initialize cross-compilation for your project
-xcargo init
-
-# Add target platforms
-xcargo target add windows linux macos
-
-# Check what's needed
-xcargo doctor
-# ✅ windows-x86_64: Ready
-# ❌ linux-arm64: Missing linker (install: apt install gcc-aarch64-linux-gnu)
-# ⚠️  macos-aarch64: Requires macOS host for native compilation
-
-# Build for all configured targets
-xcargo build --all
-
-# Build for specific target
-xcargo build --target x86_64-pc-windows-gnu
-
-# Or use as cargo wrapper
-xcargo cargo build --target x86_64-pc-windows-gnu
-```
-
-## 📦 Installation
-```bash
-# Not yet published - coming soon!
+# Install from crates.io (recommended)
 cargo install xcargo
 
-# Or build from source:
+# Or build from source
 git clone https://github.com/ibrahimcesar/xcargo
 cd xcargo
 cargo build --release
 ```
 
-## 🗺️ Roadmap
+### Interactive Setup
 
-### Phase 1: Core (Current)
-- [ ] Target detection and validation
-- [ ] Toolchain management
-- [ ] Basic native cross-compilation
-- [ ] Configuration system
+The easiest way to get started is with the interactive setup wizard:
 
-### Phase 2: Containers
-- [ ] Embedded container runtime (youki)
-- [ ] Docker/Podman fallback
-- [ ] Image caching
-- [ ] Native-first strategy
-
-### Phase 3: Advanced
-- [ ] Build profiles (release-all, embedded, mobile)
-- [ ] Parallel builds
-- [ ] Dependency management (OpenSSL, SQLite, etc.)
-- [ ] Custom target definitions
-
-### Phase 4: Integration
-- [ ] GitHub Actions integration
-- [ ] GitLab CI templates
-- [ ] Pre-built binaries distribution
-- [ ] GUI/TUI interface
-
-## 🎯 Supported Targets
-
-See [TARGETS.md](TARGETS.md) for the complete list.
-
-**Tier 1 (Native builds):**
-- x86_64-unknown-linux-gnu
-- x86_64-unknown-linux-musl
-- x86_64-pc-windows-gnu
-- x86_64-apple-darwin
-- aarch64-apple-darwin
-
-**Tier 2 (Container builds):**
-- aarch64-unknown-linux-gnu
-- armv7-unknown-linux-gnueabihf
-- x86_64-pc-windows-msvc
-- wasm32-unknown-unknown
-
-**Tier 3 (Specialized):**
-- Mobile (Android, iOS)
-- Embedded (ARM Cortex-M)
-
-## 🛠️ How It Works
-
-```
-┌─────────────────────────────────┐
-│ xcargo build --target windows   │
-└────────────┬────────────────────┘
-             │
-             ▼
-     ┌───────────────┐
-     │ Can compile   │
-     │ natively?     │
-     └───┬───────┬───┘
-         │       │
-      YES│       │NO
-         │       │
-         ▼       ▼
-    ┌────────┐ ┌──────────────────┐
-    │ Native │ │ Need container?  │
-    │ build  │ │ Check deps...    │
-    └────────┘ └────┬─────────────┘
-                    │
-                    ▼
-            ┌───────────────┐
-            │ Use youki     │
-            │ (embedded)    │
-            └───────────────┘
+```bash
+xcargo init --interactive
 ```
 
-## 📖 Usage Examples
+This will guide you through:
+- ✨ Selecting target platforms
+- ⚙️ Configuring parallel builds
+- 🔧 Setting up caching
+- 🐳 Choosing container strategy
+- 📦 Installing targets automatically
+
+### First Build
+
+```bash
+# Build for your current platform
+xcargo build
+
+# Build for a specific target
+xcargo build --target x86_64-pc-windows-gnu
+
+# Build for all configured targets
+xcargo build --all
+
+# Release build
+xcargo build --target x86_64-unknown-linux-gnu --release
+```
+
+## 💡 Usage Examples
 
 ### Basic Cross-Compilation
+
 ```bash
-# Build for Windows from Linux
+# Build for Windows from any platform
 xcargo build --target x86_64-pc-windows-gnu
 
 # Build for Linux ARM
 xcargo build --target aarch64-unknown-linux-gnu
 
-# Build for all targets
-xcargo build --all
+# Build for macOS (M1/M2)
+xcargo build --target aarch64-apple-darwin
+
+# Build for WebAssembly
+xcargo build --target wasm32-unknown-unknown
 ```
 
-### Configuration File
-```toml
-# xcargo.toml
-[targets]
-default = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-gnu"]
+### Target Management
 
+```bash
+# List common cross-compilation targets
+xcargo target list
+
+# Show installed targets
+xcargo target list --installed
+
+# Get detailed info about a target
+xcargo target info x86_64-pc-windows-gnu
+
+# Add a new target
+xcargo target add x86_64-unknown-linux-musl
+```
+
+### Configuration
+
+```bash
+# Show current configuration
+xcargo config
+
+# Show default configuration template
+xcargo config --default
+
+# Initialize with defaults
+xcargo init
+
+# Interactive setup wizard
+xcargo init --interactive
+```
+
+## ⚙️ Configuration File
+
+Create an `xcargo.toml` in your project root:
+
+```toml
+[targets]
+# Default targets to build when no target is specified
+default = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-gnu",
+]
+
+# Per-target custom configuration
+[targets."x86_64-pc-windows-gnu"]
+linker = "x86_64-w64-mingw32-gcc"
+
+[targets."x86_64-pc-windows-gnu".env]
+CC = "x86_64-w64-mingw32-gcc"
+
+[build]
+# Enable parallel builds for multiple targets
+parallel = true
+
+# Enable build caching
+cache = true
+
+# Number of parallel jobs (auto-detect if not specified)
+# jobs = 4
+
+[container]
+# Container runtime: auto, youki, docker, podman
+runtime = "auto"
+
+# When to use containers
+use_when = "target.os != host.os"
+
+# Image pull policy
+pull_policy = "if-not-present"
+
+# Build profiles for different scenarios
 [profiles.release-all]
 targets = [
     "x86_64-unknown-linux-gnu",
     "x86_64-pc-windows-gnu",
     "x86_64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
 ]
-
-[build]
-parallel = true
-cache = true
-
-[container]
-runtime = "auto"  # auto, youki, docker, podman
-use-when = "target.os != host.os"
 ```
 
-### CI/CD Integration
+## 🎯 Supported Targets
+
+xcargo supports all Rust targets. Common ones include:
+
+**Linux**
+- `x86_64-unknown-linux-gnu` - Linux x86_64
+- `x86_64-unknown-linux-musl` - Linux x86_64 (static)
+- `aarch64-unknown-linux-gnu` - Linux ARM64
+
+**Windows**
+- `x86_64-pc-windows-gnu` - Windows x86_64 (MinGW)
+- `x86_64-pc-windows-msvc` - Windows x86_64 (MSVC)
+
+**macOS**
+- `x86_64-apple-darwin` - macOS x86_64
+- `aarch64-apple-darwin` - macOS ARM64 (M1/M2)
+
+**WebAssembly**
+- `wasm32-unknown-unknown` - WebAssembly
+
+Run `xcargo target list` to see all common targets with descriptions.
+
+## 🔧 How It Works
+
+1. **Target Detection** - Analyzes the target triple and determines requirements
+2. **Toolchain Check** - Verifies the Rust toolchain and target are installed
+3. **Auto-Installation** - Installs missing components via rustup
+4. **Smart Building** - Uses native builds when possible, suggests containers when needed
+5. **Helpful Output** - Shows tips, hints, and next steps
+
+```
+┌──────────────────────────────┐
+│ xcargo build --target linux  │
+└──────────┬───────────────────┘
+           │
+           ▼
+   ┌───────────────┐
+   │ Detect target │
+   │ requirements  │
+   └───────┬───────┘
+           │
+           ▼
+   ┌────────────────┐
+   │ Check toolchain│
+   │ & install if   │
+   │ missing        │
+   └───────┬────────┘
+           │
+           ▼
+   ┌────────────────┐
+   │ Execute cargo  │
+   │ build with     │
+   │ proper flags   │
+   └────────────────┘
+```
+
+## 🤖 CI/CD Integration
+
+### GitHub Actions
+
 ```yaml
-# .github/workflows/build.yml
 name: Cross-Platform Build
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install xcargo
         run: cargo install xcargo
 
-      - name: Build all targets
+      - name: Build for all targets
         run: xcargo build --all
-
-      - name: Upload artifacts
-        run: xcargo release --upload
 ```
 
-## 🎨 Design Goals
+### GitLab CI
 
-**Make cross-compilation boring (in a good way):**
+```yaml
+build:
+  image: rust:latest
+  script:
+    - cargo install xcargo
+    - xcargo build --all
+  artifacts:
+    paths:
+      - target/*/release/*
+```
 
-- ✅ **Just Works™** - Sensible defaults for everything
-- ✅ **Fast** - Native when possible, containerized when needed
-- ✅ **Smart** - Detects and suggests solutions automatically
-- ✅ **Transparent** - Shows exactly what it's doing
-- ✅ **Flexible** - Override any behavior when needed
+## 🎨 Beautiful Output
+
+xcargo provides helpful, colored output with tips and hints:
+
+```
+✨ xcargo Interactive Setup
+Let's configure cross-compilation for your project!
+
+✓ Detected host platform: aarch64-apple-darwin
+
+? Which targets do you want to build for?
+  ↑↓ to navigate, Space to select, Enter to confirm
+  [ ] Linux x86_64
+  [✓] Windows x86_64 (GNU)
+  [✓] macOS ARM64 (M1/M2)
+
+✓ Configuration created successfully!
+
+📋 Configuration Summary
+────────────────────────
+Targets: x86_64-pc-windows-gnu, aarch64-apple-darwin
+Parallel builds: enabled
+Build cache: enabled
+Container strategy: target.os != host.os
+
+💡 Tip: Run 'xcargo build' to build for your host platform
+💡 Tip: Run 'xcargo build --all' to build for all configured targets
+```
+
+## 📊 Status
+
+**Current Version:** 0.1.0
+
+✅ **Working Features:**
+- Target detection and validation
+- Toolchain management via rustup
+- Basic cross-compilation
+- Configuration system (xcargo.toml)
+- Interactive TUI setup wizard
+- Beautiful colored output with tips
+- Self-building capability (xcargo builds itself!)
+
+🚧 **Planned Features:**
+- Container builds (Docker/Podman/youki)
+- Parallel target compilation
+- Native dependency management
+- Custom linker configuration
+- Build caching improvements
 
 ## 🆚 Comparison
 
-| Feature | xcargo | cross | cargo-zigbuild | Manual |
-|---------|--------|-------|----------------|--------|
-| **Native builds** | ✅ First | ❌ | ⚠️ Via Zig | ✅ |
-| **Container fallback** | ✅ | ✅ | ❌ | ❌ |
-| **No Docker required** | ✅ youki | ❌ | ✅ | ✅ |
-| **Auto-setup** | ✅ | ❌ | ⚠️ | ❌ |
-| **Native deps** | ✅ Planned | ⚠️ | ❌ | ⚠️ |
-| **CI/CD templates** | ✅ Planned | ⚠️ | ❌ | ❌ |
+| Feature | xcargo | cross | cargo-zigbuild |
+|---------|--------|-------|----------------|
+| **Native-first** | ✅ | ❌ | ⚠️ Via Zig |
+| **Auto-install targets** | ✅ | ❌ | ❌ |
+| **Interactive setup** | ✅ | ❌ | ❌ |
+| **Beautiful output** | ✅ | ⚠️ | ⚠️ |
+| **Configuration file** | ✅ | ✅ | ❌ |
+| **Container fallback** | 🚧 Planned | ✅ | ❌ |
+| **Zero config** | ✅ | ❌ | ⚠️ |
 
 ## 🤝 Contributing
 
-Contributions welcome! This project is in early stages.
+Contributions are welcome! This is an early-stage project with lots of opportunity to help.
 
-**How to help:**
-- 🐛 Report issues or suggest features
-- 💻 Submit PRs for bug fixes or features
+**Ways to contribute:**
+- 🐛 Report bugs and suggest features via [GitHub Issues](https://github.com/ibrahimcesar/xcargo/issues)
+- 💻 Submit pull requests for fixes or new features
 - 📝 Improve documentation
-- 🎯 Test on different platforms
-- 🔧 Add support for new targets
+- 🎯 Test on different platforms and targets
+- ⭐ Star the repo to show support!
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## 📚 Documentation
+
+- [Full Documentation](https://ibrahimcesar.github.io/xcargo)
+- [API Documentation](https://docs.rs/xcargo)
+- [Configuration Reference](https://ibrahimcesar.github.io/xcargo/docs/reference/configuration)
+- [Target Guide](https://ibrahimcesar.github.io/xcargo/docs/guides/target-management)
 
 ## 📝 License
 
-[MIT](./LICENSE)
+[MIT](./LICENSE) © Ibrahim Cesar
 
 ## 🙏 Acknowledgments
 
-Inspired by:
+Inspired by excellent tools in the Rust ecosystem:
 - [cross](https://github.com/cross-rs/cross) - Container-based cross-compilation
 - [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) - Zig linker approach
-- [xwin](https://github.com/Jake-Shadle/xwin) - Windows SDK management
-- [youki](https://github.com/containers/youki) - Container runtime in Rust
+- [rustup](https://rustup.rs/) - Rust toolchain management
 
 ---
 
+<div align="center">
+
 **xcargo** - *Cross-compilation, zero friction* 🎯
 
-*Status: 🚧 Pre-alpha - Architecture planning*
+Made with ❤️ by [Ibrahim Cesar](https://github.com/ibrahimcesar)
 
-**Star** ⭐ this repo to follow development!
+[⭐ Star on GitHub](https://github.com/ibrahimcesar/xcargo) | [📦 View on crates.io](https://crates.io/crates/xcargo) | [📖 Read the Docs](https://ibrahimcesar.github.io/xcargo)
+
+</div>
