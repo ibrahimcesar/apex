@@ -30,9 +30,7 @@ pub mod target;
 pub mod config;
 
 /// Toolchain installation and management
-pub mod toolchain {
-    //! Toolchain detection and setup
-}
+pub mod toolchain;
 
 /// Build orchestration
 pub mod build {
@@ -99,6 +97,7 @@ pub mod prelude {
     pub use crate::error::{Error, Result};
     pub use crate::target::{Target, TargetRequirements, TargetTier};
     pub use crate::config::Config;
+    pub use crate::toolchain::{Toolchain, ToolchainManager};
 }
 
 // Re-exports
