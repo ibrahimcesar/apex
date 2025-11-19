@@ -46,6 +46,9 @@ walkdir = "2.5"
 # Process execution
 which = "6.0"
 
+# Async runtime for parallel builds
+tokio = { version = "1.41", features = ["rt-multi-thread", "macros", "process"] }
+
 # Terminal output
 colored = "2.1"
 indicatif = "0.17"

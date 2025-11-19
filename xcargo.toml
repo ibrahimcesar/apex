@@ -1,0 +1,15 @@
+[targets]
+default = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+
+[build]
+parallel = true
+cache = true
+cargo_flags = []
+
+[container]
+runtime = "auto"
+use_when = "target.os != host.os"
+pull_policy = "if-not-present"

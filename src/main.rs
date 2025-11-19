@@ -321,7 +321,13 @@ fn main() -> Result<()> {
                     std::process::exit(1);
                 }
 
-                builder.build_all(&config.targets.default, &options)?;
+                // Use parallel builds if enabled in config
+                if config.build.parallel {
+                    let rt = tokio::runtime::Runtime::new()?;
+                    rt.block_on(builder.build_all_parallel(&config.targets.default, &options))?;
+                } else {
+                    builder.build_all(&config.targets.default, &options)?;
+                }
             } else {
                 builder.build(&options)?;
             }
