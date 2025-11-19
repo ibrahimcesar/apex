@@ -33,9 +33,7 @@ pub mod config;
 pub mod toolchain;
 
 /// Build orchestration
-pub mod build {
-    //! Build execution and management
-}
+pub mod build;
 
 /// Container runtime integration
 pub mod container {
@@ -96,6 +94,7 @@ pub mod prelude {
     pub use crate::target::{Target, TargetRequirements, TargetTier};
     pub use crate::config::Config;
     pub use crate::toolchain::{Toolchain, ToolchainManager};
+    pub use crate::build::{Builder, BuildOptions};
 }
 
 // Re-exports
