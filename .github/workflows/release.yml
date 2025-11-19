@@ -107,6 +107,39 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
+      - name: Install minisign
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            wget -q https://github.com/jedisct1/minisign/releases/download/0.11/minisign-linux.tar.gz
+            tar xzf minisign-linux.tar.gz
+            sudo mv minisign-linux/x86_64/minisign /usr/local/bin/
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install minisign
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            choco install minisign -y
+          fi
+        shell: bash
+
+      - name: Sign binary with minisign
+        env:
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        run: |
+          echo "$MINISIGN_KEY" > signing.key
+          echo "$MINISIGN_PASSWORD" | minisign -Sm target/${{ matrix.target }}/release/${{ matrix.artifact_name }} -s signing.key
+          rm signing.key
+        shell: bash
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd target/${{ matrix.target }}/release
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            certutil -hashfile ${{ matrix.artifact_name }} SHA256 > ${{ matrix.artifact_name }}.sha256
+          else
+            sha256sum ${{ matrix.artifact_name }} > ${{ matrix.artifact_name }}.sha256
+          fi
+        shell: bash
+
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
@@ -116,6 +149,26 @@ jobs:
           asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
           asset_content_type: application/octet-stream
+
+      - name: Upload Signature
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.minisig
+          asset_name: ${{ matrix.asset_name }}.minisig
+          asset_content_type: text/plain
+
+      - name: Upload Checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.sha256
+          asset_name: ${{ matrix.asset_name }}.sha256
+          asset_content_type: text/plain
 
   publish-crates:
     name: Publish to crates.io

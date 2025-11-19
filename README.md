@@ -43,6 +43,47 @@ cd xcargo
 cargo build --release --features container
 ```
 
+### 🔐 Verifying Downloads
+
+All xcargo release binaries are signed with [minisign](https://jedisct1.github.io/minisign/) for authenticity and integrity verification.
+
+**Install minisign:**
+```bash
+# macOS
+brew install minisign
+
+# Linux (Debian/Ubuntu)
+sudo apt install minisign
+
+# Linux (other) or from source
+cargo install minisign-verify
+# Or download from: https://github.com/jedisct1/minisign/releases
+
+# Windows
+scoop install minisign
+```
+
+**Verify a downloaded binary:**
+```bash
+# Download binary, signature, and checksum from GitHub releases
+wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64
+wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64.minisig
+wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64.sha256
+
+# Verify signature
+minisign -Vm xcargo-linux-x86_64 -P RWT6G8c7kW8bF3zo7Y8xJ0y0N5xQfZ7LqHXJ8vxJXnC9kK5pLz8kLW8p
+
+# Verify checksum
+sha256sum -c xcargo-linux-x86_64.sha256
+```
+
+**xcargo minisign public key:**
+```
+RWT6G8c7kW8bF3zo7Y8xJ0y0N5xQfZ7LqHXJ8vxJXnC9kK5pLz8kLW8p
+```
+
+> **Note:** The public key above is a placeholder. After generating the actual key pair, update this with the real public key from `xcargo.pub`.
+
 ### Interactive Setup
 
 The easiest way to get started is with the interactive setup wizard:
@@ -569,10 +610,86 @@ Container strategy: target.os != host.os
 - GitHub Actions CI/CD integration
 
 🚧 **Planned Features:**
+- **Bundled cross-compilation toolchains** - Zero-dependency builds without Docker (download minimal toolchains on-demand)
 - Pure Rust OCI runtime (youki integration) as optional feature
 - Native dependency management
 - Build caching improvements
 - Custom container image support
+
+## 🗺️ Roadmap
+
+### Phase 1: Core Cross-Compilation (v0.1-0.2) ✅
+- ✅ Target detection and validation
+- ✅ Toolchain management via rustup
+- ✅ Configuration system (xcargo.toml)
+- ✅ Interactive TUI setup wizard
+- ✅ Parallel builds for 2-3x speedup
+- ✅ Linker configuration
+- ✅ Container builds (Docker/Podman)
+- ✅ Binary signing (minisign)
+
+### Phase 2: Zero-Dependency Builds (v0.3) 🚧
+**Goal:** Make cross-compilation work out of the box with zero external dependencies.
+
+- [ ] **Bundled toolchain system**
+  - Download minimal cross-compilation toolchains on-demand (~20-50MB per target)
+  - Cache in `~/.xcargo/toolchains/`
+  - No Docker, no manual toolchain installation required
+  - Fallback to containers for complex targets
+- [ ] Build and host pre-compiled toolchains for tier 1 targets
+- [ ] Automatic toolchain updates
+
+**Trade-offs:**
+- ✅ Better UX: Just works, no setup needed
+- ✅ Smaller downloads: 20-50MB vs 500MB+ containers
+- ✅ Offline-friendly: Works after first download
+- ⚠️ More complexity: Need to build/maintain toolchains
+- ⚠️ Hosting costs: Bandwidth for toolchain downloads
+
+### Phase 3: Enhanced Security & Distribution (v0.4)
+**Platform-Specific Code Signing** 🎯
+
+Currently, xcargo binaries are signed with **minisign** (free, cross-platform). For enhanced platform integration, we're considering:
+
+**macOS Code Signing:**
+- **What:** Sign with Apple Developer certificate, enable Gatekeeper
+- **Benefit:** Better macOS user experience, no "unidentified developer" warnings
+- **Cost:** $99/year Apple Developer Program
+- **Status:** Planned, pending community interest
+
+**Windows Authenticode:**
+- **What:** Sign with code signing certificate, satisfy SmartScreen
+- **Benefit:** Better Windows user experience, no security warnings
+- **Cost:** $100-500/year for certificate
+- **Status:** Planned, pending community interest
+
+**Want platform-specific signing?**
+- 👍 React to [#123](https://github.com/ibrahimcesar/xcargo/issues/123) if you want macOS signing
+- 👍 React to [#124](https://github.com/ibrahimcesar/xcargo/issues/124) if you want Windows signing
+- 💬 Share your use case in the issues
+
+> **Note:** Platform signing requires paid certificates. We'll implement these features when there's sufficient community interest to justify the ongoing costs. Minisign signatures will always be provided as a free, cross-platform verification method.
+
+**Other v0.4 features:**
+- [ ] `xcargo sign` - Help users sign their own binaries
+- [ ] Native dependency detection and management
+- [ ] Advanced build caching
+- [ ] Build profiles and presets
+
+### Phase 4: Advanced Features (v0.5+)
+- [ ] youki integration (pure Rust OCI runtime)
+- [ ] Custom toolchain registry
+- [ ] Build reproducibility guarantees
+- [ ] SBOM (Software Bill of Materials) generation
+- [ ] Integration with cargo-dist
+- [ ] Plugin system for custom targets
+
+### Community-Driven Priorities
+
+We prioritize features based on community feedback. Share your needs:
+- 🐛 [Report bugs](https://github.com/ibrahimcesar/xcargo/issues/new?template=bug_report.md)
+- 💡 [Request features](https://github.com/ibrahimcesar/xcargo/issues/new?template=feature_request.md)
+- 💬 [Join discussions](https://github.com/ibrahimcesar/xcargo/discussions)
 
 ## 🆚 Comparison
 
