@@ -1,6 +1,6 @@
 [package]
 name = "xcargo"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.70"
 authors = ["Ibrahim Cesar <email@ibrahimcesar.com>"]
@@ -45,6 +45,9 @@ walkdir = "2.5"
 
 # Process execution
 which = "6.0"
+
+# Directory utilities
+dirs = "5.0"
 
 # Async runtime for parallel builds
 tokio = { version = "1.41", features = ["rt-multi-thread", "macros", "process"] }

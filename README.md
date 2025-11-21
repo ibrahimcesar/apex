@@ -22,6 +22,7 @@ _Cross-compilation, zero friction_
 - ⚡ **Smart Detection** - Figures out what you need automatically
 - 📦 **Interactive Setup** - TUI wizard for easy project configuration
 - 🚀 **Parallel Builds** - Build multiple targets concurrently for 2-3x speedup
+- 🦎 **Zig Integration** - Auto-detect Zig for zero-config cross-compilation (macOS/Windows → Linux)
 - 🐳 **Container Support** - Docker/Podman integration for complex cross-compilation
 - 🌍 **Many Targets** - Linux, Windows, macOS, WebAssembly, and more
 - 🤖 **CI/CD Ready** - Perfect for GitHub Actions, GitLab CI
@@ -133,6 +134,41 @@ xcargo build --target wasm32-unknown-unknown
 # Use container for build (requires --features container)
 xcargo build --target x86_64-unknown-linux-gnu --container
 ```
+
+### Zero-Config Cross-Compilation with Zig
+
+xcargo automatically detects [Zig](https://ziglang.org/) and uses it for cross-compilation when building for a different OS. No configuration needed!
+
+```bash
+# Install Zig (optional - enables native cross-compilation)
+# macOS
+brew install zig
+
+# Windows
+scoop install zig
+# or: choco install zig
+
+# Linux
+# Download from https://ziglang.org/download/
+```
+
+**With Zig installed, cross-compilation just works:**
+
+```bash
+# On macOS or Windows, build for Linux - no Docker needed!
+xcargo build --target x86_64-unknown-linux-gnu
+
+# Output:
+# ℹ Zig 0.15.2 detected, using for cross-compilation
+# 💡 Cross-compiling using Zig toolchain
+# ✓ Build completed for x86_64-unknown-linux-gnu
+```
+
+**Supported targets with Zig:**
+- ✅ `x86_64-unknown-linux-gnu`
+- ✅ `aarch64-unknown-linux-gnu`
+- ✅ `armv7-unknown-linux-gnueabihf`
+- ⚠️ `x86_64-unknown-linux-musl` (may have issues)
 
 ### Target Management
 

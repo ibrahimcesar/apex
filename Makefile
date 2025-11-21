@@ -153,6 +153,26 @@ coverage: ## 📊 Generate code coverage report
 	@echo "$(GREEN)✅ Coverage report generated in coverage/$(RESET)"
 
 # ========================================
+# 🛠️  Toolchain Testing Commands
+# ========================================
+
+.PHONY: test-toolchain
+test-toolchain: ## 🔧 Test manual cross-compilation with Bootlin toolchain
+	@echo "$(BOLD)$(CYAN)🔧 Testing manual cross-compilation...$(RESET)"
+	./scripts/test_manual_cross_compilation.sh
+
+.PHONY: test-toolchain-clean
+test-toolchain-clean: ## 🧹 Clean toolchain test artifacts
+	@echo "$(BOLD)$(RED)🧹 Cleaning toolchain test artifacts...$(RESET)"
+	rm -rf .toolchain_test .zig_test
+	@echo "$(GREEN)✅ Toolchain test artifacts cleaned!$(RESET)"
+
+.PHONY: test-zig
+test-zig: ## 🦎 Test Zig-based cross-compilation (macOS → Linux)
+	@echo "$(BOLD)$(CYAN)🦎 Testing Zig cross-compilation...$(RESET)"
+	./scripts/test_zig_cross_compilation.sh
+
+# ========================================
 # 📦 Release Commands
 # ========================================
 
@@ -182,7 +202,7 @@ all: build test docs-build ## 🎯 Build everything
 	@echo "$(BOLD)$(GREEN)✅ Full build complete!$(RESET)"
 
 .PHONY: clean-all
-clean-all: clean docs-clean ## 🧹 Clean everything
+clean-all: clean docs-clean test-toolchain-clean ## 🧹 Clean everything
 	@echo "$(BOLD)$(GREEN)✅ Everything cleaned!$(RESET)"
 
 .PHONY: setup

@@ -2,6 +2,20 @@
 
 **Goal:** Zero-dependency cross-compilation - no Docker, no external toolchains, just `cargo install xcargo` and it works.
 
+## ⚠️ Critical Discovery: Platform-Specific Toolchains Required
+
+**Update (2025-11-18)**: Testing revealed that toolchains must match the **host platform**, not just the target:
+
+```
+Bootlin toolchains are Linux ELF binaries → Only run on Linux hosts
+macOS users need Mach-O binaries → Different toolchain source required
+Windows users need PE binaries → Different toolchain source required
+```
+
+**Revised Strategy**: Start with **Linux-only bundled toolchains** (v0.3), add macOS/Windows support later.
+
+See [TOOLCHAIN_TESTING_FINDINGS.md](./TOOLCHAIN_TESTING_FINDINGS.md) for detailed test results.
+
 ## Architecture
 
 ```
@@ -72,9 +86,11 @@ ld, ar, as, objcopy         (~3MB)
 
 ### Phase 1: Research ✓
 - [x] Identify approach (bundled toolchains)
-- [ ] Research existing toolchain sources
-- [ ] Determine minimal requirements per target
-- [ ] Test cross-compilation with manual toolchains
+- [x] Research existing toolchain sources (Bootlin, musl-cross-make, etc.)
+- [x] **Test cross-compilation with manual toolchains** ⚠️ **Linux-only**
+- [x] Determine platform-specific requirements
+- [ ] Test on Linux platform (GitHub Actions or VM)
+- [ ] Research macOS-compatible toolchains
 
 ### Phase 2: Core Infrastructure
 - [ ] Create `src/toolchains/` module

@@ -29,6 +29,10 @@ xcargo.log
 # Toolchains (if locally managed)
 /.toolchains/
 
+# Toolchain testing artifacts
+/.toolchain_test/
+/.zig_test/
+
 # OS
 Thumbs.db
 .vscode/branch-timer.json

@@ -3,6 +3,8 @@
 //! This module handles Rust toolchain detection, installation, and management
 //! through rustup integration.
 
+
+pub mod zig;
 use crate::error::{Error, Result};
 use crate::target::Target;
 use std::process::Command;

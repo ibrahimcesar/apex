@@ -5,7 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2025-01-18
+## [0.3.0] - 2025-11-21
+
+### Added
+
+- **Zig Cross-Compilation Support** - Zero-config cross-compilation from macOS/Windows to Linux
+  - Auto-detection of Zig installation
+  - Automatic wrapper script generation for CC/AR/LINKER
+  - Support for `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `armv7-unknown-linux-gnueabihf`
+  - Cross-platform support (macOS, Windows, Linux hosts)
+  - No Docker required for most Linux cross-compilation scenarios
+
+- **New CLI Flags**
+  - `--zig` - Force using Zig for cross-compilation
+  - `--no-zig` - Disable Zig and use native toolchain or containers
+
+- **Documentation**
+  - Added Zig integration section to README
+  - Created research documents for macOS and Windows toolchain options
+  - Toolchain testing findings documentation
+
+### Changed
+
+- Build process now checks for Zig availability before falling back to other methods
+- Improved error messages when Zig is not available or doesn't support target
+
+### Dependencies
+
+- Added `dirs` crate for cross-platform home directory detection
+
+## [0.2.0] - 2025-11-18
 
 ### Added
 
@@ -96,5 +125,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build profiles for different scenarios
 - Container runtime configuration (planned)
 
+[0.3.0]: https://github.com/ibrahimcesar/xcargo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ibrahimcesar/xcargo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ibrahimcesar/xcargo/releases/tag/v0.1.0

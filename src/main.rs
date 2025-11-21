@@ -44,6 +44,14 @@ enum Commands {
         #[arg(long)]
         container: bool,
 
+        /// Force using Zig for cross-compilation
+        #[arg(long, conflicts_with = "no_zig")]
+        zig: bool,
+
+        /// Disable Zig cross-compilation (use native toolchain or container)
+        #[arg(long, conflicts_with = "zig")]
+        no_zig: bool,
+
         /// Toolchain to use (e.g., stable, nightly)
         #[arg(long)]
         toolchain: Option<String>,
@@ -302,10 +310,21 @@ fn main() -> Result<()> {
             all,
             release,
             container,
+            zig,
+            no_zig,
             toolchain,
             cargo_args,
         } => {
             let builder = Builder::new()?;
+
+            // Determine Zig preference: None = auto, Some(true) = force, Some(false) = disable
+            let use_zig = if zig {
+                Some(true)
+            } else if no_zig {
+                Some(false)
+            } else {
+                None
+            };
 
             let options = BuildOptions {
                 target: target.clone(),
@@ -314,6 +333,7 @@ fn main() -> Result<()> {
                 toolchain,
                 verbose: cli.verbose,
                 use_container: container,
+                use_zig,
             };
 
             if all {

@@ -7,7 +7,10 @@ use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::output::{helpers, tips};
 use crate::target::Target;
+use crate::toolchain::zig::ZigToolchain;
 use crate::toolchain::ToolchainManager;
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use tokio::task;
@@ -32,6 +35,9 @@ pub struct BuildOptions {
 
     /// Use container for build
     pub use_container: bool,
+
+    /// Zig preference: None = auto, Some(true) = force, Some(false) = disable
+    pub use_zig: Option<bool>,
 }
 
 impl Default for BuildOptions {
@@ -43,6 +49,7 @@ impl Default for BuildOptions {
             toolchain: None,
             verbose: false,
             use_container: false,
+            use_zig: None,
         }
     }
 }
@@ -54,6 +61,9 @@ pub struct Builder {
 
     /// Configuration
     config: Config,
+
+    /// Zig toolchain (if available)
+    zig_toolchain: Option<ZigToolchain>,
 }
 
 impl Builder {
@@ -73,19 +83,25 @@ impl Builder {
         let toolchain_manager = ToolchainManager::new()?;
         let config = Config::discover()?.map(|(c, _)| c).unwrap_or_default();
 
+        // Try to detect Zig for cross-compilation
+        let zig_toolchain = ZigToolchain::detect().ok().flatten();
+
         Ok(Self {
             toolchain_manager,
             config,
+            zig_toolchain,
         })
     }
 
     /// Create a builder with a specific configuration
     pub fn with_config(config: Config) -> Result<Self> {
         let toolchain_manager = ToolchainManager::new()?;
+        let zig_toolchain = ZigToolchain::detect().ok().flatten();
 
         Ok(Self {
             toolchain_manager,
             config,
+            zig_toolchain,
         })
     }
 
@@ -134,6 +150,10 @@ impl Builder {
             return self.build_with_container(&target, options);
         }
 
+        // Check if Zig can handle this cross-compilation
+        let zig_env = self.try_zig_cross_compilation(&target, options)?;
+        let using_zig = zig_env.is_some();
+
         // Determine toolchain
         let toolchain = if let Some(tc) = &options.toolchain {
             tc.clone()
@@ -148,17 +168,23 @@ impl Builder {
 
         // Show tips based on target
         if target.os != Target::detect_host()?.os {
-            helpers::tip("Cross-compiling to a different OS");
-            if self.config.container.use_when == "target.os != host.os" {
-                helpers::hint("Container builds not yet implemented - using native toolchain");
+            if using_zig {
+                helpers::tip("Cross-compiling using Zig toolchain");
+            } else {
+                helpers::tip("Cross-compiling to a different OS");
+                if self.config.container.use_when == "target.os != host.os" {
+                    helpers::hint("Container builds not yet implemented - using native toolchain");
+                }
             }
         }
 
         // Get target-specific configuration
         let target_config = self.config.get_target_config(&target.triple);
 
-        // Check linker configuration and availability
-        let linker = if let Some(config) = target_config {
+        // Check linker configuration and availability (skip if using Zig)
+        let linker = if using_zig {
+            None // Zig provides its own linker
+        } else if let Some(config) = target_config {
             config.linker.clone()
         } else {
             let requirements = target.get_requirements();
@@ -192,18 +218,30 @@ impl Builder {
         helpers::progress("Running cargo build...");
         let mut cmd = Command::new("cargo");
 
-        // Set environment variables for linker and custom env vars
-        if let Some(ref linker_path) = linker {
-            // Convert target triple to CARGO env var format
-            // e.g., x86_64-pc-windows-gnu -> CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER
-            let env_var = format!(
-                "CARGO_TARGET_{}_LINKER",
-                target.triple.to_uppercase().replace('-', "_")
-            );
-            cmd.env(&env_var, linker_path);
+        // Apply Zig environment if using Zig for cross-compilation
+        if let Some(ref env) = zig_env {
+            for (key, value) in env {
+                cmd.env(key, value);
+                if options.verbose {
+                    helpers::info(format!("Setting {}={}", key, value.display()));
+                }
+            }
+        }
 
-            if options.verbose {
-                helpers::info(format!("Setting {}={}", env_var, linker_path));
+        // Set environment variables for linker and custom env vars (only if not using Zig)
+        if !using_zig {
+            if let Some(ref linker_path) = linker {
+                // Convert target triple to CARGO env var format
+                // e.g., x86_64-pc-windows-gnu -> CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER
+                let env_var = format!(
+                    "CARGO_TARGET_{}_LINKER",
+                    target.triple.to_uppercase().replace('-', "_")
+                );
+                cmd.env(&env_var, linker_path);
+
+                if options.verbose {
+                    helpers::info(format!("Setting {}={}", env_var, linker_path));
+                }
             }
         }
 
@@ -464,8 +502,53 @@ impl Builder {
         Ok(())
     }
 
+    /// Try to use Zig for cross-compilation if available and supported
+    ///
+    /// Returns Some(env) if Zig can handle this cross-compilation, None otherwise.
+    /// Respects the `use_zig` option: None = auto, Some(true) = force, Some(false) = disable
+    fn try_zig_cross_compilation(&self, target: &Target, options: &BuildOptions) -> Result<Option<HashMap<String, PathBuf>>> {
+        // Check if Zig is explicitly disabled
+        if options.use_zig == Some(false) {
+            if options.verbose {
+                helpers::info("Zig disabled via --no-zig flag");
+            }
+            return Ok(None);
+        }
+
+        // Check if Zig is explicitly forced
+        let force_zig = options.use_zig == Some(true);
+
+        // For auto mode, only attempt Zig for cross-compilation (different OS)
+        if !force_zig {
+            let host = Target::detect_host()?;
+            if target.os == host.os {
+                return Ok(None);
+            }
+        }
+
+        // Check if Zig is available and supports this target
+        if let Some(ref zig) = self.zig_toolchain {
+            if zig.supports_target(target) {
+                helpers::info(format!("Zig {} detected, using for cross-compilation", zig.version()));
+                let env = zig.environment_for_target(target)?;
+                return Ok(Some(env));
+            } else if force_zig {
+                return Err(Error::Toolchain(format!(
+                    "Zig does not support target '{}'. Supported targets: x86_64-linux-gnu, aarch64-linux-gnu, armv7-linux-gnueabihf",
+                    target.triple
+                )));
+            }
+        } else if force_zig {
+            return Err(Error::Toolchain(
+                "Zig not found. Install Zig to use --zig flag: brew install zig (macOS) or scoop install zig (Windows)".to_string()
+            ));
+        }
+
+        Ok(None)
+    }
+
     /// Determine if a container build should be used for this target
-    fn should_use_container_for_target(&self, target: &Target) -> Result<bool> {
+    fn should_use_container_for_target(&self, _target: &Target) -> Result<bool> {
         #[cfg(not(feature = "container"))]
         {
             return Ok(false);
