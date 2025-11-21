@@ -2,171 +2,136 @@
 
 > **Project Goal:** Build a zero-configuration cross-compilation tool for Rust that automates toolchain management, intelligently uses containers only when needed, and makes cross-compilation boring (in a good way).
 
-**Current Status:** v0.0.1 (preparing for crates.io on crates.io)
-**Next Milestone:** v0.1.0-alpha (Basic functionality)
+**Current Status:** v0.3.0 (Zig cross-compilation support)
+**Next Milestone:** v0.4.0 (Stability & Polish)
+**Roadmap:** See [PATH_TO_PRODUCTION.md](./PATH_TO_PRODUCTION.md) for detailed v1.0.0 roadmap
 
 ---
 
-## 🎯 Phase 1: Core Foundation (v0.1.0-alpha)
+## ✅ Phase 1: Core Foundation (v0.1.0) - COMPLETED
 
 ### 1.1 Module Structure Setup
-- [ ] Create `src/target/mod.rs` - Target platform definitions and detection
-- [ ] Create `src/toolchain/mod.rs` - Toolchain detection and management
-- [ ] Create `src/build/mod.rs` - Build orchestration
-- [ ] Create `src/container/mod.rs` - Container runtime integration
-- [ ] Create `src/config/mod.rs` - Configuration file handling
-- [ ] Create `src/deps/mod.rs` - Native dependency handling
-- [ ] Create `src/output/mod.rs` - User-facing output formatting
-- [ ] Update `src/lib.rs` prelude to re-export core types once modules are implemented
+- [x] Create `src/target/mod.rs` - Target platform definitions and detection
+- [x] Create `src/toolchain/mod.rs` - Toolchain detection and management
+- [x] Create `src/build/mod.rs` - Build orchestration
+- [x] Create `src/container/mod.rs` - Container runtime integration
+- [x] Create `src/config/mod.rs` - Configuration file handling
+- [x] Create `src/output/mod.rs` - User-facing output formatting
+- [x] Update `src/lib.rs` prelude to re-export core types
 
 ### 1.2 Target Detection (`src/target/`)
-- [ ] Define `Target` struct with triple, OS, arch, environment
-- [ ] Implement `Target::from_triple()` parser
-- [ ] Implement `Target::detect_host()` for current platform
-- [ ] Implement `Target::detect_installed()` via rustup
-- [ ] Add target validation against rustup's supported targets
-- [ ] Implement target tier classification (Tier 1/2/3)
-- [ ] Add target aliases (e.g., "linux" → "x86_64-unknown-linux-gnu")
-- [ ] Unit tests for target parsing and detection
+- [x] Define `Target` struct with triple, OS, arch, environment
+- [x] Implement `Target::from_triple()` parser
+- [x] Implement `Target::detect_host()` for current platform
+- [x] Implement `Target::detect_installed()` via rustup
+- [x] Add target validation against rustup's supported targets
+- [x] Implement target tier classification (Tier 1/2/3)
+- [x] Add target aliases (e.g., "linux" → "x86_64-unknown-linux-gnu")
+- [x] Unit tests for target parsing and detection
 
 ### 1.3 Toolchain Management (`src/toolchain/`)
-- [ ] Detect `rustup` availability and version
-- [ ] Check if target is installed via `rustup target list --installed`
-- [ ] Implement auto-installation of Rust targets
-- [ ] Detect system linkers (gcc, mingw-w64, clang)
-- [ ] Detect cross-compilation tools per target
-- [ ] Generate installation suggestions for missing tools
-- [ ] Add dry-run mode for toolchain operations
-- [ ] Integration tests for toolchain detection
+- [x] Detect `rustup` availability and version
+- [x] Check if target is installed via `rustup target list --installed`
+- [x] Implement auto-installation of Rust targets
+- [x] Detect system linkers (gcc, mingw-w64, clang)
+- [x] Detect cross-compilation tools per target
+- [x] Generate installation suggestions for missing tools
 
 ### 1.4 Configuration System (`src/config/`)
-- [ ] Define `ApexConfig` struct matching `apex.toml` schema
-- [ ] Implement TOML parsing with serde
-- [ ] Support `[targets]`, `[build]`, `[container]`, `[profiles]` sections
-- [ ] Load config from `apex.toml` or `.apex/config.toml`
-- [ ] Merge with defaults (native-first strategy)
-- [ ] Implement `apex init` to generate default config
-- [ ] Add config validation
-- [ ] Add `apex config` command to show current/default config
+- [x] Define config struct matching `xcargo.toml` schema
+- [x] Implement TOML parsing with serde
+- [x] Support `[targets]`, `[build]`, `[container]`, `[profiles]` sections
+- [x] Load config from `xcargo.toml`
+- [x] Merge with defaults (native-first strategy)
+- [x] Implement `xcargo init` to generate default config
+- [x] Add `xcargo config` command to show current/default config
 
 ### 1.5 Build System - Native Only (`src/build/`)
-- [ ] Implement basic cargo wrapper for single target
-- [ ] Pass `--target` flag correctly to cargo
-- [ ] Handle `--release` and `--debug` modes
-- [ ] Capture and format cargo output
-- [ ] Implement build for multiple targets sequentially
-- [ ] Add basic error handling and reporting
-- [ ] Track build artifacts locations
-- [ ] Integration test: build simple binary for host target
+- [x] Implement basic cargo wrapper for single target
+- [x] Pass `--target` flag correctly to cargo
+- [x] Handle `--release` and `--debug` modes
+- [x] Capture and format cargo output
+- [x] Implement build for multiple targets sequentially
+- [x] Add basic error handling and reporting
+- [x] Track build artifacts locations
 
 ### 1.6 CLI Implementation (`src/main.rs`)
-- [ ] Implement `apex init` - create default `apex.toml`
-- [ ] Implement `apex target list` - show available/installed targets
-- [ ] Implement `apex target add <target>` - install via rustup
-- [ ] Implement `apex target remove <target>` - uninstall via rustup
-- [ ] Implement `apex build --target <target>` - single target build
-- [ ] Implement `apex build --all` - build all configured targets
-- [ ] Implement `apex doctor` - check system dependencies
-- [ ] Implement `apex doctor --target <target>` - check specific target
-- [ ] Add proper error messages and colored output
+- [x] Implement `xcargo init` - create default `xcargo.toml`
+- [x] Implement `xcargo target list` - show available/installed targets
+- [x] Implement `xcargo target add <target>` - install via rustup
+- [x] Implement `xcargo build --target <target>` - single target build
+- [x] Implement `xcargo build --all` - build all configured targets
+- [x] Implement `xcargo check` - type checking without building
+- [x] Implement `xcargo test` - run tests for targets
+- [x] Add proper error messages and colored output
 
 ### 1.7 Output & UX (`src/output/`)
-- [ ] Implement progress indicators (spinners, progress bars)
-- [ ] Add colored output for success/warning/error
-- [ ] Format toolchain suggestions nicely
-- [ ] Add verbose mode logging
-- [ ] Implement `doctor` output with checkmarks/crosses
-- [ ] Add build summary (time, artifacts, locations)
+- [x] Implement progress indicators (spinners, progress bars)
+- [x] Add colored output for success/warning/error
+- [x] Format toolchain suggestions nicely
+- [x] Add verbose mode logging
+- [x] Add build summary (time, artifacts, locations)
 
 ### 1.8 Testing & Documentation
-- [ ] Create `tests/integration.rs` - integration tests
-- [ ] Create `examples/basic_build.rs` - working example
-- [ ] Add unit tests for each module (>70% coverage)
-- [ ] Create `docs/guide.md` - user guide
-- [ ] Create `CHANGELOG.md` - track changes
-- [ ] Update README with installation instructions
-- [ ] Add rustdoc comments to all public APIs
-- [ ] Test on Linux, macOS, Windows (WSL2)
+- [x] Create `examples/basic_build.rs` - working example
+- [x] Create `CHANGELOG.md` - track changes
+- [x] Update README with installation instructions
+- [ ] Create `tests/integration.rs` - integration tests (needs work)
+- [ ] Add unit tests for each module (>70% coverage) (needs work)
 
 ---
 
-## 🐳 Phase 2: Container Integration (v0.2.0)
+## ✅ Phase 2: Container Integration (v0.2.0) - COMPLETED
 
 ### 2.1 Container Runtime Detection
-- [ ] Detect Docker availability and version
-- [ ] Detect Podman availability and version
-- [ ] Implement runtime selection (auto/docker/podman/youki)
-- [ ] Add fallback logic (youki → docker → podman)
-- [ ] Implement `use-when` condition parsing (e.g., `target.os != host.os`)
+- [x] Detect Docker availability and version
+- [x] Detect Podman availability and version
+- [x] Implement runtime selection (auto/docker/podman)
+- [x] Implement `use-when` condition parsing (e.g., `target.os != host.os`)
 
-### 2.2 Youki Integration (Embedded Runtime)
-- [ ] Research youki integration options
-- [ ] Evaluate embedding youki vs. external dependency
-- [ ] Implement basic container creation via youki
-- [ ] Map build directories into container
-- [ ] Execute cargo commands in container
-- [ ] Capture container output
-- [ ] Clean up containers after build
+### 2.2 Docker/Podman Support
+- [x] Use pre-built cross-compilation images (rust-cross/cross)
+- [x] Handle volume mounting for project directory
+- [x] Support custom container images via config
+- [x] Add `--container` flag for forced container builds
 
-### 2.3 Docker/Podman Fallback
-- [ ] Use pre-built cross-compilation images (rust-cross/cross)
-- [ ] Implement custom Dockerfiles for missing targets
-- [ ] Handle volume mounting for project directory
-- [ ] Implement caching layer for container images
-- [ ] Support custom container images via config
-
-### 2.4 Build Strategy Logic
-- [ ] Implement decision tree: native vs. container
-- [ ] Check if linker is available for native build
-- [ ] Fallback to container if native tools missing
-- [ ] Respect `container.use-when` config
-- [ ] Add `--force-native` and `--force-container` flags
-
-### 2.5 Container Testing
-- [ ] Test Docker builds on all Tier 2 targets
-- [ ] Test Podman builds
-- [ ] Test youki basic functionality
-- [ ] Verify artifact ownership and permissions
-- [ ] Integration tests for container builds
+### 2.3 Build Strategy Logic
+- [x] Implement decision tree: native vs. container
+- [x] Check if linker is available for native build
+- [x] Respect `container.use-when` config
+- [x] Feature-gated container support (`--features container`)
 
 ---
 
-## ⚡ Phase 3: Advanced Features (v0.3.0)
+## ✅ Phase 3: Advanced Features (v0.3.0) - COMPLETED
 
 ### 3.1 Parallel Builds
-- [ ] Implement parallel builds for multiple targets
-- [ ] Use rayon or tokio for parallelization
-- [ ] Respect `build.parallel` config
-- [ ] Show progress for all builds simultaneously
-- [ ] Handle failures gracefully (continue or stop)
+- [x] Implement parallel builds for multiple targets
+- [x] Use tokio for parallelization
+- [x] Respect `build.parallel` config
+- [x] Handle failures gracefully (continue or stop)
 
-### 3.2 Build Profiles
-- [ ] Implement `profiles` section in config
-- [ ] Add built-in profiles: `release-all`, `mobile`, `embedded`
-- [ ] Support `apex build --profile <name>`
-- [ ] Allow profile composition and inheritance
+### 3.2 Zig Cross-Compilation (NEW)
+- [x] Auto-detect Zig installation
+- [x] Generate CC/AR/LINKER wrapper scripts
+- [x] Support x86_64/aarch64/armv7 Linux targets
+- [x] Cross-compile from macOS/Windows to Linux
+- [x] Add `--zig` and `--no-zig` CLI flags
 
-### 3.3 Caching System
-- [ ] Implement build cache per target
-- [ ] Cache toolchain installations
-- [ ] Cache container images
-- [ ] Implement cache invalidation strategy
-- [ ] Add `apex cache clean` command
-- [ ] Respect `build.cache` config
+### 3.3 Per-Target Configuration
+- [x] Add custom environment variables per target
+- [x] Support custom linker per target
+- [x] Support custom RUSTFLAGS per target
 
-### 3.4 Dependency Management
-- [ ] Detect native dependencies (OpenSSL, SQLite, libpq)
-- [ ] Auto-install or suggest installation commands
-- [ ] Handle static linking preferences
-- [ ] Support vendoring native dependencies
-- [ ] Add OpenSSL cross-compilation support
-- [ ] Document dependency handling per target
+### 3.4 Additional CLI Commands
+- [x] `xcargo check` - type checking without building
+- [x] `xcargo test` - run tests for targets
 
-### 3.5 Custom Target Definitions
-- [ ] Allow custom target JSON definitions
-- [ ] Support custom linker scripts
-- [ ] Add custom environment variables per target
-- [ ] Support pre-build and post-build hooks
+### Remaining for Phase 3:
+- [ ] Build profiles (`xcargo build --profile <name>`)
+- [ ] Build caching system
+- [ ] `xcargo clean` command
+- [ ] Progress bars in parallel builds (infrastructure added)
 
 ---
 

@@ -15,6 +15,38 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 use tokio::task;
 
+/// Cargo operation type
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CargoOperation {
+    /// cargo build
+    #[default]
+    Build,
+    /// cargo check
+    Check,
+    /// cargo test
+    Test,
+}
+
+impl CargoOperation {
+    /// Get the cargo subcommand name
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CargoOperation::Build => "build",
+            CargoOperation::Check => "check",
+            CargoOperation::Test => "test",
+        }
+    }
+
+    /// Get a human-readable description
+    pub fn description(&self) -> &'static str {
+        match self {
+            CargoOperation::Build => "Building",
+            CargoOperation::Check => "Checking",
+            CargoOperation::Test => "Testing",
+        }
+    }
+}
+
 /// Build options and configuration
 #[derive(Debug, Clone)]
 pub struct BuildOptions {
@@ -38,6 +70,9 @@ pub struct BuildOptions {
 
     /// Zig preference: None = auto, Some(true) = force, Some(false) = disable
     pub use_zig: Option<bool>,
+
+    /// Cargo operation (build, check, test)
+    pub operation: CargoOperation,
 }
 
 impl Default for BuildOptions {
@@ -50,6 +85,7 @@ impl Default for BuildOptions {
             verbose: false,
             use_container: false,
             use_zig: None,
+            operation: CargoOperation::Build,
         }
     }
 }
@@ -124,7 +160,7 @@ impl Builder {
     /// # }
     /// ```
     pub fn build(&self, options: &BuildOptions) -> Result<()> {
-        helpers::section("xcargo build");
+        helpers::section(format!("xcargo {}", options.operation.as_str()));
 
         // Determine target
         let target_triple = if let Some(target) = &options.target {
@@ -140,7 +176,7 @@ impl Builder {
 
         // Parse target
         let target = Target::from_triple(&target_triple)?;
-        helpers::progress(format!("Building for target: {}", target.triple));
+        helpers::progress(format!("{} for target: {}", options.operation.description(), target.triple));
 
         // Check if we should use container build
         let should_use_container = options.use_container ||
@@ -215,7 +251,7 @@ impl Builder {
         }
 
         // Build cargo command
-        helpers::progress("Running cargo build...");
+        helpers::progress(format!("Running cargo {}...", options.operation.as_str()));
         let mut cmd = Command::new("cargo");
 
         // Apply Zig environment if using Zig for cross-compilation
@@ -269,7 +305,7 @@ impl Builder {
             cmd.arg(format!("+{}", toolchain));
         }
 
-        cmd.arg("build");
+        cmd.arg(options.operation.as_str());
 
         // Add target
         cmd.arg("--target").arg(&target.triple);
@@ -306,28 +342,30 @@ impl Builder {
 
         if status.success() {
             println!(); // Empty line for spacing
-            helpers::success(format!("Build completed for {}", target.triple));
+            helpers::success(format!("{} completed for {}", options.operation.description(), target.triple));
 
-            // Show helpful tips
-            if options.release {
-                helpers::tip(format!("Release build artifacts are in target/{}/release/", target.triple));
-            } else {
-                helpers::tip(format!("Debug build artifacts are in target/{}/debug/", target.triple));
-            }
+            // Show helpful tips (only for build/test, not check)
+            if options.operation != CargoOperation::Check {
+                if options.release {
+                    helpers::tip(format!("Release build artifacts are in target/{}/release/", target.triple));
+                } else {
+                    helpers::tip(format!("Debug build artifacts are in target/{}/debug/", target.triple));
+                }
 
-            // Additional tips based on target
-            if target.os == "windows" && Target::detect_host()?.os != "windows" {
-                helpers::tip(format!("Test Windows binaries with Wine: wine target/{}/debug/your-app.exe", target.triple));
-            }
+                // Additional tips based on target
+                if target.os == "windows" && Target::detect_host()?.os != "windows" {
+                    helpers::tip(format!("Test Windows binaries with Wine: wine target/{}/debug/your-app.exe", target.triple));
+                }
 
-            if target.os == "linux" && Target::detect_host()?.os != "linux" {
-                helpers::tip("Consider using a Linux VM or container to test the binary".to_string());
+                if target.os == "linux" && Target::detect_host()?.os != "linux" {
+                    helpers::tip("Consider using a Linux VM or container to test the binary".to_string());
+                }
             }
 
             Ok(())
         } else {
             println!();
-            helpers::error(format!("Build failed for target {}", target.triple));
+            helpers::error(format!("{} failed for target {}", options.operation.description(), target.triple));
 
             // Provide helpful error context
             if linker.is_none() {
@@ -384,7 +422,8 @@ impl Builder {
             helpers::tip("Run with --verbose to see detailed error output".to_string());
 
             Err(Error::Build(format!(
-                "Build failed for target {}",
+                "{} failed for target {}",
+                options.operation.description(),
                 target.triple
             )))
         }
@@ -392,8 +431,8 @@ impl Builder {
 
     /// Build for multiple targets (sequential)
     pub fn build_all(&self, targets: &[String], options: &BuildOptions) -> Result<()> {
-        helpers::section("xcargo build (multiple targets)");
-        helpers::info(format!("Building for {} targets", targets.len()));
+        helpers::section(format!("xcargo {} (multiple targets)", options.operation.as_str()));
+        helpers::info(format!("{} for {} targets", options.operation.description(), targets.len()));
 
         let mut successes = Vec::new();
         let mut failures = Vec::new();
@@ -432,8 +471,8 @@ impl Builder {
 
     /// Build for multiple targets in parallel
     pub async fn build_all_parallel(&self, targets: &[String], options: &BuildOptions) -> Result<()> {
-        helpers::section("xcargo build (parallel)");
-        helpers::info(format!("Building for {} targets in parallel", targets.len()));
+        helpers::section(format!("xcargo {} (parallel)", options.operation.as_str()));
+        helpers::info(format!("{} for {} targets in parallel", options.operation.description(), targets.len()));
 
         let successes = Arc::new(Mutex::new(Vec::new()));
         let failures = Arc::new(Mutex::new(Vec::new()));

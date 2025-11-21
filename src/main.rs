@@ -1,14 +1,37 @@
 //! xcargo CLI entry point
 
-use anyhow::Result;
 use clap::{Parser, Subcommand};
-use inquire::{MultiSelect, Select, Confirm};
-use xcargo::build::{Builder, BuildOptions};
+use inquire::{MultiSelect, Select, Confirm, InquireError};
+use xcargo::build::{Builder, BuildOptions, CargoOperation};
 use xcargo::config::Config;
+use xcargo::error::Error;
 use xcargo::output::{helpers, tips};
 use xcargo::target::Target;
 use xcargo::toolchain::ToolchainManager;
 use std::path::Path;
+
+/// Result type for main using xcargo's error type
+type Result<T> = std::result::Result<T, Error>;
+
+/// Convert InquireError to our Error type
+fn prompt_err(e: InquireError) -> Error {
+    Error::Prompt(e.to_string())
+}
+
+/// Print error with suggestion and hint, then exit with proper code
+fn exit_with_error(error: &Error) -> ! {
+    helpers::error(format!("{}", error));
+
+    if let Some(hint) = error.hint() {
+        helpers::hint(hint);
+    }
+
+    if let Some(suggestion) = error.suggestion() {
+        helpers::tip(suggestion);
+    }
+
+    std::process::exit(error.exit_code())
+}
 
 /// xcargo - Cross-compilation, zero friction 🎯
 #[derive(Parser)]
@@ -81,6 +104,64 @@ enum Commands {
         default: bool,
     },
 
+    /// Check target(s) for errors without building
+    Check {
+        /// Target triple (e.g., x86_64-pc-windows-gnu)
+        #[arg(short, long)]
+        target: Option<String>,
+
+        /// Check all configured targets
+        #[arg(long, conflicts_with = "target")]
+        all: bool,
+
+        /// Force using Zig for cross-compilation
+        #[arg(long, conflicts_with = "no_zig")]
+        zig: bool,
+
+        /// Disable Zig cross-compilation
+        #[arg(long, conflicts_with = "zig")]
+        no_zig: bool,
+
+        /// Toolchain to use (e.g., stable, nightly)
+        #[arg(long)]
+        toolchain: Option<String>,
+
+        /// Additional cargo arguments
+        #[arg(last = true)]
+        cargo_args: Vec<String>,
+    },
+
+    /// Run tests for target(s)
+    Test {
+        /// Target triple (e.g., x86_64-pc-windows-gnu)
+        #[arg(short, long)]
+        target: Option<String>,
+
+        /// Test all configured targets
+        #[arg(long, conflicts_with = "target")]
+        all: bool,
+
+        /// Release mode
+        #[arg(short, long)]
+        release: bool,
+
+        /// Force using Zig for cross-compilation
+        #[arg(long, conflicts_with = "no_zig")]
+        zig: bool,
+
+        /// Disable Zig cross-compilation
+        #[arg(long, conflicts_with = "zig")]
+        no_zig: bool,
+
+        /// Toolchain to use (e.g., stable, nightly)
+        #[arg(long)]
+        toolchain: Option<String>,
+
+        /// Additional cargo arguments
+        #[arg(last = true)]
+        cargo_args: Vec<String>,
+    },
+
     /// Show version information
     Version,
 }
@@ -123,7 +204,7 @@ fn run_basic_setup() -> Result<()> {
         helpers::warning("xcargo.toml already exists");
         let overwrite = Confirm::new("Overwrite existing configuration?")
             .with_default(false)
-            .prompt()?;
+            .prompt().map_err(prompt_err)?;
 
         if !overwrite {
             helpers::info("Setup cancelled");
@@ -156,7 +237,7 @@ fn run_interactive_setup() -> Result<()> {
         helpers::warning("xcargo.toml already exists");
         let overwrite = Confirm::new("Overwrite existing configuration?")
             .with_default(false)
-            .prompt()?;
+            .prompt().map_err(prompt_err)?;
 
         if !overwrite {
             helpers::info("Setup cancelled");
@@ -186,7 +267,7 @@ fn run_interactive_setup() -> Result<()> {
         target_options.iter().map(|(name, _)| *name).collect()
     )
     .with_help_message("Use ↑↓ to navigate, Space to select, Enter to confirm")
-    .prompt()?;
+    .prompt().map_err(prompt_err)?;
 
     let selected_targets: Vec<String> = selected_names
         .iter()
@@ -207,13 +288,13 @@ fn run_interactive_setup() -> Result<()> {
     let parallel = Confirm::new("Enable parallel builds?")
         .with_default(true)
         .with_help_message("Build multiple targets concurrently for faster builds")
-        .prompt()?;
+        .prompt().map_err(prompt_err)?;
 
     // Build caching
     let cache = Confirm::new("Enable build caching?")
         .with_default(true)
         .with_help_message("Cache build artifacts to speed up subsequent builds")
-        .prompt()?;
+        .prompt().map_err(prompt_err)?;
 
     // Container strategy
     let container_options = vec![
@@ -227,7 +308,7 @@ fn run_interactive_setup() -> Result<()> {
         container_options
     )
     .with_help_message("Containers ensure reproducible builds")
-    .prompt()?;
+    .prompt().map_err(prompt_err)?;
 
     let use_when = match container_choice {
         "Auto (use containers only when necessary)" => "target.os != host.os",
@@ -276,7 +357,7 @@ fn run_interactive_setup() -> Result<()> {
     // Offer to install targets
     let install_now = Confirm::new("Install selected targets now?")
         .with_default(true)
-        .prompt()?;
+        .prompt().map_err(prompt_err)?;
 
     if install_now && !selected_targets.is_empty() {
         println!();
@@ -301,7 +382,13 @@ fn run_interactive_setup() -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(e) = run() {
+        exit_with_error(&e);
+    }
+}
+
+fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -334,6 +421,7 @@ fn main() -> Result<()> {
                 verbose: cli.verbose,
                 use_container: container,
                 use_zig,
+                operation: CargoOperation::Build,
             };
 
             if all {
@@ -348,6 +436,105 @@ fn main() -> Result<()> {
                 }
 
                 // Use parallel builds if enabled in config
+                if config.build.parallel {
+                    let rt = tokio::runtime::Runtime::new()?;
+                    rt.block_on(builder.build_all_parallel(&config.targets.default, &options))?;
+                } else {
+                    builder.build_all(&config.targets.default, &options)?;
+                }
+            } else {
+                builder.build(&options)?;
+            }
+        }
+
+        Commands::Check {
+            target,
+            all,
+            zig,
+            no_zig,
+            toolchain,
+            cargo_args,
+        } => {
+            let builder = Builder::new()?;
+
+            let use_zig = if zig {
+                Some(true)
+            } else if no_zig {
+                Some(false)
+            } else {
+                None
+            };
+
+            let options = BuildOptions {
+                target: target.clone(),
+                release: false,
+                cargo_args,
+                toolchain,
+                verbose: cli.verbose,
+                use_container: false,
+                use_zig,
+                operation: CargoOperation::Check,
+            };
+
+            if all {
+                let config = Config::discover()?.map(|(c, _)| c).unwrap_or_default();
+
+                if config.targets.default.is_empty() {
+                    helpers::error("No default targets configured");
+                    helpers::hint("Add targets to xcargo.toml: [targets] default = [\"x86_64-unknown-linux-gnu\"]");
+                    std::process::exit(1);
+                }
+
+                if config.build.parallel {
+                    let rt = tokio::runtime::Runtime::new()?;
+                    rt.block_on(builder.build_all_parallel(&config.targets.default, &options))?;
+                } else {
+                    builder.build_all(&config.targets.default, &options)?;
+                }
+            } else {
+                builder.build(&options)?;
+            }
+        }
+
+        Commands::Test {
+            target,
+            all,
+            release,
+            zig,
+            no_zig,
+            toolchain,
+            cargo_args,
+        } => {
+            let builder = Builder::new()?;
+
+            let use_zig = if zig {
+                Some(true)
+            } else if no_zig {
+                Some(false)
+            } else {
+                None
+            };
+
+            let options = BuildOptions {
+                target: target.clone(),
+                release,
+                cargo_args,
+                toolchain,
+                verbose: cli.verbose,
+                use_container: false,
+                use_zig,
+                operation: CargoOperation::Test,
+            };
+
+            if all {
+                let config = Config::discover()?.map(|(c, _)| c).unwrap_or_default();
+
+                if config.targets.default.is_empty() {
+                    helpers::error("No default targets configured");
+                    helpers::hint("Add targets to xcargo.toml: [targets] default = [\"x86_64-unknown-linux-gnu\"]");
+                    std::process::exit(1);
+                }
+
                 if config.build.parallel {
                     let rt = tokio::runtime::Runtime::new()?;
                     rt.block_on(builder.build_all_parallel(&config.targets.default, &options))?;

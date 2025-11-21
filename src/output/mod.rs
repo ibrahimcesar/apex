@@ -3,7 +3,9 @@
 //! This module provides utilities for displaying information, tips, hints,
 //! and progress to users in a delightful and informative way.
 
+use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use std::fmt;
+use std::time::{Duration, Instant};
 
 /// Color codes for terminal output
 pub mod colors {
@@ -205,6 +207,201 @@ pub mod helpers {
         let title = title.into();
         println!("\n{}{}{}{}", colors::BOLD, colors::CYAN, title, colors::RESET);
         println!("{}", "─".repeat(title.len()));
+    }
+}
+
+/// Progress bar utilities for build operations
+pub mod progress {
+    use super::*;
+
+    /// A timed build progress tracker
+    pub struct BuildProgress {
+        bar: ProgressBar,
+        start_time: Instant,
+        target: String,
+    }
+
+    impl BuildProgress {
+        /// Create a new build progress spinner
+        pub fn new(target: &str, operation: &str) -> Self {
+            let bar = ProgressBar::new_spinner();
+            bar.set_style(
+                ProgressStyle::default_spinner()
+                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+                    .template(&format!(
+                        "{{spinner:.cyan}} {} {{msg:.bold}} [{{elapsed_precise}}]",
+                        operation
+                    ))
+                    .unwrap()
+            );
+            bar.set_message(target.to_string());
+            bar.enable_steady_tick(Duration::from_millis(80));
+
+            Self {
+                bar,
+                start_time: Instant::now(),
+                target: target.to_string(),
+            }
+        }
+
+        /// Create a build progress for compiling
+        pub fn compiling(target: &str) -> Self {
+            Self::new(target, "Compiling")
+        }
+
+        /// Create a build progress for checking
+        pub fn checking(target: &str) -> Self {
+            Self::new(target, "Checking")
+        }
+
+        /// Create a build progress for testing
+        pub fn testing(target: &str) -> Self {
+            Self::new(target, "Testing")
+        }
+
+        /// Update the message
+        pub fn set_message(&self, msg: &str) {
+            self.bar.set_message(msg.to_string());
+        }
+
+        /// Mark as finished with success
+        pub fn finish_success(&self) {
+            let elapsed = self.start_time.elapsed();
+            self.bar.finish_with_message(format!(
+                "{}{}{} {} {}({}){}",
+                colors::GREEN, "✓", colors::RESET,
+                self.target,
+                colors::DIM, format_duration(elapsed), colors::RESET
+            ));
+        }
+
+        /// Mark as finished with error
+        pub fn finish_error(&self, error: &str) {
+            let elapsed = self.start_time.elapsed();
+            self.bar.finish_with_message(format!(
+                "{}{}{} {} - {} {}({}){}",
+                colors::RED, "✗", colors::RESET,
+                self.target, error,
+                colors::DIM, format_duration(elapsed), colors::RESET
+            ));
+        }
+
+        /// Get elapsed duration
+        pub fn elapsed(&self) -> Duration {
+            self.start_time.elapsed()
+        }
+    }
+
+    /// Multi-target progress tracker for parallel builds
+    pub struct MultiTargetProgress {
+        multi: MultiProgress,
+        start_time: Instant,
+    }
+
+    impl MultiTargetProgress {
+        /// Create a new multi-target progress tracker
+        pub fn new() -> Self {
+            Self {
+                multi: MultiProgress::new(),
+                start_time: Instant::now(),
+            }
+        }
+
+        /// Add a target progress bar
+        pub fn add_target(&self, target: &str, operation: &str) -> ProgressBar {
+            let bar = self.multi.add(ProgressBar::new_spinner());
+            bar.set_style(
+                ProgressStyle::default_spinner()
+                    .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+                    .template(&format!(
+                        "  {{spinner:.cyan}} {} {{msg:.bold}} [{{elapsed_precise}}]",
+                        operation
+                    ))
+                    .unwrap()
+            );
+            bar.set_message(target.to_string());
+            bar.enable_steady_tick(Duration::from_millis(80));
+            bar
+        }
+
+        /// Get total elapsed time
+        pub fn elapsed(&self) -> Duration {
+            self.start_time.elapsed()
+        }
+
+        /// Print summary
+        pub fn finish_summary(&self, successes: usize, failures: usize) {
+            let elapsed = self.elapsed();
+            println!();
+            if failures == 0 {
+                println!(
+                    "{}{}✓{} All {} targets completed in {}",
+                    colors::BOLD, colors::GREEN, colors::RESET,
+                    successes,
+                    format_duration(elapsed)
+                );
+            } else {
+                println!(
+                    "{}{}⚠{} {} succeeded, {} failed in {}",
+                    colors::BOLD, colors::YELLOW, colors::RESET,
+                    successes, failures,
+                    format_duration(elapsed)
+                );
+            }
+        }
+    }
+
+    impl Default for MultiTargetProgress {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    /// Format a duration in a human-readable way
+    pub fn format_duration(duration: Duration) -> String {
+        let secs = duration.as_secs();
+        let millis = duration.subsec_millis();
+
+        if secs >= 60 {
+            let mins = secs / 60;
+            let secs = secs % 60;
+            format!("{}m {:02}s", mins, secs)
+        } else if secs > 0 {
+            format!("{}.{:02}s", secs, millis / 10)
+        } else {
+            format!("{}ms", millis)
+        }
+    }
+
+    /// Simple timer for tracking operation duration
+    pub struct Timer {
+        start: Instant,
+        label: String,
+    }
+
+    impl Timer {
+        /// Start a new timer
+        pub fn start(label: &str) -> Self {
+            Self {
+                start: Instant::now(),
+                label: label.to_string(),
+            }
+        }
+
+        /// Get elapsed duration
+        pub fn elapsed(&self) -> Duration {
+            self.start.elapsed()
+        }
+
+        /// Print elapsed time
+        pub fn print_elapsed(&self) {
+            println!(
+                "{}{}⏱{} {} completed in {}{}{}",
+                colors::BOLD, colors::CYAN, colors::RESET,
+                self.label,
+                colors::DIM, format_duration(self.elapsed()), colors::RESET
+            );
+        }
     }
 }
 
