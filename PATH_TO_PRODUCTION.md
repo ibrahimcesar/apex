@@ -57,7 +57,7 @@ These features are required for a stable, production-ready release.
 - [ ] Increase unit test coverage to 80%+
 
 #### 3. Documentation
-**Status:** README exists, needs expansion
+**Status:** In Progress
 **Effort:** 2-3 days
 
 - [ ] Complete README with all commands
@@ -65,7 +65,7 @@ These features are required for a stable, production-ready release.
 - [ ] Troubleshooting guide
 - [ ] Examples for common scenarios
 - [ ] API documentation (rustdoc)
-- [ ] Update documentation site at /docs. After that clean /doca from any unecessary *.md file
+- [x] Reorganize documentation structure (removed blog, moved research docs, flattened hierarchy)
 
 #### 4. Stability & Polish
 **Status:** Functional but rough edges
