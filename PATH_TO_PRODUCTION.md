@@ -57,13 +57,13 @@ These features are required for a stable, production-ready release.
 - [ ] Increase unit test coverage to 80%+
 
 #### 3. Documentation
-**Status:** Done ✅
+**Status:** Mostly Done ✅
 **Effort:** 2-3 days
 
 - [x] Complete README with all commands
 - [x] Plugin system documentation (Quick Start, Development Guide, API Reference)
 - [x] Reorganize documentation structure (removed blog, moved research docs, flattened hierarchy)
-- [ ] `xcargo doctor` command for system diagnostics
+- [x] `xcargo doctor` command for system diagnostics
 - [ ] Troubleshooting guide
 - [ ] Examples for common scenarios
 - [ ] API documentation (rustdoc)
@@ -203,6 +203,10 @@ src/
 │   ├── mod.rs          # Container runtime detection
 │   ├── runtime.rs      # Runtime abstraction
 │   └── images.rs       # Image management
+├── doctor/             # System diagnostics ✅ New
+│   ├── mod.rs          # Doctor command orchestration
+│   ├── checks.rs       # Individual diagnostic checks
+│   └── report.rs       # Formatted output
 ├── error/              # Error handling ✅ New
 │   ├── mod.rs          # Error enum and ExitCode
 │   └── suggestions.rs  # Platform-specific suggestions
@@ -220,7 +224,8 @@ src/
 ```
 
 **Test Coverage:**
-- Total tests: 88 (up from 51)
+- Total tests: 100 (up from 51)
+- Doctor tests: 12
 - Plugin tests: 16
 - Cache tests: 15
 - Error tests: 8
@@ -279,6 +284,12 @@ The plugin system provides extensibility through a trait-based architecture:
    - `plugin/hooks.rs` - Hook execution system
    - `plugin/registry.rs` - Plugin management
    - 16 comprehensive tests
+
+5. **Add `doctor/` module** - ✅ Done (New)
+   - `doctor/mod.rs` - System diagnostics orchestration
+   - `doctor/checks.rs` - 9 diagnostic checks (rustup, cargo, toolchains, targets, Zig, Docker, Podman, linkers, config)
+   - `doctor/report.rs` - Color-coded formatted output
+   - 12 comprehensive tests
 
 ---
 
