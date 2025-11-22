@@ -76,21 +76,11 @@ impl ZigToolchain {
         &self.zig_path
     }
 
-    /// Check if Zig can cross-compile to a target
+    /// Check if Zig supports a target by triple name (static method)
     ///
-    /// Zig supports many targets out of the box. This function checks if the
-    /// target is supported by Zig.
-    pub fn supports_target(&self, target: &Target) -> bool {
-        // Zig supports most Linux targets
-        // Known supported targets:
-        // - x86_64-unknown-linux-gnu
-        // - x86_64-unknown-linux-musl (with caveats)
-        // - aarch64-unknown-linux-gnu
-        // - aarch64-unknown-linux-musl
-        // - armv7-unknown-linux-gnueabihf
-        // - i686-unknown-linux-gnu
-
-        match target.triple.as_str() {
+    /// This can be called without having a ZigToolchain instance.
+    pub fn supports_target_name(triple: &str) -> bool {
+        match triple {
             // Linux targets (well-supported)
             "x86_64-unknown-linux-gnu" => true,
             "aarch64-unknown-linux-gnu" => true,
@@ -115,6 +105,23 @@ impl ZigToolchain {
             // Unknown target
             _ => false,
         }
+    }
+
+    /// Check if Zig can cross-compile to a target
+    ///
+    /// Zig supports many targets out of the box. This function checks if the
+    /// target is supported by Zig.
+    pub fn supports_target(&self, target: &Target) -> bool {
+        // Zig supports most Linux targets
+        // Known supported targets:
+        // - x86_64-unknown-linux-gnu
+        // - x86_64-unknown-linux-musl (with caveats)
+        // - aarch64-unknown-linux-gnu
+        // - aarch64-unknown-linux-musl
+        // - armv7-unknown-linux-gnueabihf
+        // - i686-unknown-linux-gnu
+
+        Self::supports_target_name(&target.triple)
     }
 
     /// Get the Zig target triple for a Rust target

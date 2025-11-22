@@ -36,14 +36,14 @@ xcargo is a zero-configuration cross-compilation tool for Rust. This document ou
 These features are required for a stable, production-ready release.
 
 #### 1. Error Handling & Recovery
-**Status:** Done
+**Status:** Done ✅
 **Effort:** 2-3 days
 
 - [x] Replace `anyhow` with structured error types in critical paths
 - [x] Clear, actionable error messages with Tips/Hints (Error::suggestion/hint)
 - [x] Exit codes that CI systems can rely on (ExitCode enum: 0-7, 130)
 - [x] Platform-specific install hints for missing tools
-- [ ] Graceful degradation when tools are missing (partial)
+- [x] Graceful degradation when tools are missing
 
 #### 2. Comprehensive Testing
 **Status:** In Progress

@@ -266,16 +266,17 @@ pub fn create_runtime(runtime_type: RuntimeType) -> Result<Box<dyn ContainerRunt
                 return Ok(Box::new(podman));
             }
 
-            Err(Error::Container(
-                "No container runtime available (tried Docker and Podman)".to_string(),
-            ))
+            // Neither runtime is available - provide helpful error
+            let host_os = std::env::consts::OS;
+            Err(Error::container_not_found("docker/podman", host_os))
         }
         RuntimeType::Docker => {
             let docker = DockerRuntime::new();
             if docker.is_available() {
                 Ok(Box::new(docker))
             } else {
-                Err(Error::Container("Docker is not available".to_string()))
+                let host_os = std::env::consts::OS;
+                Err(Error::container_not_found("docker", host_os))
             }
         }
         RuntimeType::Podman => {
@@ -283,10 +284,26 @@ pub fn create_runtime(runtime_type: RuntimeType) -> Result<Box<dyn ContainerRunt
             if podman.is_available() {
                 Ok(Box::new(podman))
             } else {
-                Err(Error::Container("Podman is not available".to_string()))
+                let host_os = std::env::consts::OS;
+                Err(Error::container_not_found("podman", host_os))
             }
         }
     }
+}
+
+/// Check if any container runtime is available (for informational purposes)
+pub fn check_runtime_availability() -> Option<String> {
+    let docker = DockerRuntime::new();
+    if docker.is_available() {
+        return Some("docker".to_string());
+    }
+
+    let podman = PodmanRuntime::new();
+    if podman.is_available() {
+        return Some("podman".to_string());
+    }
+
+    None
 }
 
 #[cfg(test)]

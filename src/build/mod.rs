@@ -227,26 +227,51 @@ impl Builder {
             requirements.linker.map(|s| s.to_string())
         };
 
-        // Verify linker exists if specified
-        if let Some(ref linker_path) = linker {
-            if which::which(linker_path).is_err() {
-                helpers::warning(format!("Configured linker '{}' not found in PATH", linker_path));
-                helpers::hint(format!("Install the linker: {}", linker_path));
+        // Verify linker exists if specified (and not using Zig)
+        if !using_zig {
+            if let Some(ref linker_path) = linker {
+                match which::which(linker_path) {
+                    Ok(path) => {
+                        if options.verbose {
+                            helpers::info(format!("Using linker: {} ({})", linker_path, path.display()));
+                        }
+                    }
+                    Err(_) => {
+                        helpers::warning(format!("Configured linker '{}' not found in PATH", linker_path));
 
-                let requirements = target.get_requirements();
-                if !requirements.tools.is_empty() {
-                    helpers::hint(format!("Required tools: {}", requirements.tools.join(", ")));
+                        let requirements = target.get_requirements();
+                        if !requirements.tools.is_empty() {
+                            helpers::hint(format!("Required tools: {}", requirements.tools.join(", ")));
+                        }
+
+                        // Suggest platform-specific installation
+                        let host = Target::detect_host()?;
+                        self.suggest_linker_installation(&host, &target);
+
+                        helpers::tip("The build may fail if the linker is not available");
+                    }
                 }
             } else {
-                helpers::info(format!("Using linker: {}", linker_path));
-            }
-        } else {
-            // No linker configured, show suggestion if needed
-            let requirements = target.get_requirements();
-            if let Some(suggested_linker) = requirements.linker {
-                helpers::hint(format!("Recommended linker: {}", suggested_linker));
-                helpers::tip(format!("Set linker in xcargo.toml: [targets.\"{}\"] linker = \"{}\"",
-                    target.triple, suggested_linker));
+                // No linker configured - check if one is recommended
+                let requirements = target.get_requirements();
+                if let Some(suggested_linker) = requirements.linker {
+                    // Check if the suggested linker is available
+                    if which::which(&suggested_linker).is_ok() {
+                        if options.verbose {
+                            helpers::info(format!("Using default linker: {}", suggested_linker));
+                        }
+                    } else {
+                        helpers::hint(format!("Recommended linker '{}' not found", suggested_linker));
+
+                        let host = Target::detect_host()?;
+                        self.suggest_linker_installation(&host, &target);
+
+                        helpers::tip(format!(
+                            "Configure in xcargo.toml: [targets.\"{}\"] linker = \"{}\"",
+                            target.triple, suggested_linker
+                        ));
+                    }
+                }
             }
         }
 
@@ -557,12 +582,13 @@ impl Builder {
         // Check if Zig is explicitly forced
         let force_zig = options.use_zig == Some(true);
 
+        // Determine if we're cross-compiling to a different OS
+        let host = Target::detect_host()?;
+        let is_cross_os = target.os != host.os;
+
         // For auto mode, only attempt Zig for cross-compilation (different OS)
-        if !force_zig {
-            let host = Target::detect_host()?;
-            if target.os == host.os {
-                return Ok(None);
-            }
+        if !force_zig && !is_cross_os {
+            return Ok(None);
         }
 
         // Check if Zig is available and supports this target
@@ -576,14 +602,61 @@ impl Builder {
                     "Zig does not support target '{}'. Supported targets: x86_64-linux-gnu, aarch64-linux-gnu, armv7-linux-gnueabihf",
                     target.triple
                 )));
+            } else {
+                // Zig available but doesn't support this target - not an error in auto mode
+                if options.verbose {
+                    helpers::info(format!("Zig doesn't support target '{}', falling back to native toolchain", target.triple));
+                }
             }
-        } else if force_zig {
-            return Err(Error::Toolchain(
-                "Zig not found. Install Zig to use --zig flag: brew install zig (macOS) or scoop install zig (Windows)".to_string()
-            ));
+        } else {
+            // Zig not available
+            if force_zig {
+                return Err(Error::Toolchain(
+                    "Zig not found. Install Zig to use --zig flag: brew install zig (macOS) or scoop install zig (Windows)".to_string()
+                ));
+            } else if is_cross_os && ZigToolchain::supports_target_name(&target.triple) {
+                // Graceful degradation: Zig could help but isn't available
+                helpers::hint("Zig is not installed but could simplify this cross-compilation");
+                let install_hint = match host.os.as_str() {
+                    "macos" => "Install with: brew install zig",
+                    "linux" => "Install with: snap install zig --classic --beta",
+                    "windows" => "Install with: scoop install zig",
+                    _ => "Install Zig: https://ziglang.org/download/",
+                };
+                helpers::tip(format!("{} (then use --zig flag)", install_hint));
+            }
         }
 
         Ok(None)
+    }
+
+    /// Suggest platform-specific installation instructions for a linker
+    fn suggest_linker_installation(&self, host: &Target, target: &Target) {
+        let host_os = host.os.as_str();
+        let target_os = target.os.as_str();
+
+        match (host_os, target_os) {
+            ("macos", "linux") => {
+                helpers::tip("For Linux cross-compilation on macOS, consider using Zig: brew install zig");
+                helpers::tip(format!("Then build with: xcargo build --target {} --zig", target.triple));
+            }
+            ("macos", "windows") => {
+                helpers::tip("Install MinGW for Windows cross-compilation: brew install mingw-w64");
+            }
+            ("linux", "windows") => {
+                helpers::tip("Install MinGW: sudo apt install mingw-w64 (Debian/Ubuntu)");
+                helpers::tip("Or: sudo dnf install mingw64-gcc (Fedora)");
+            }
+            ("linux", "macos") => {
+                helpers::tip("macOS cross-compilation requires osxcross: https://github.com/tpoechtrager/osxcross");
+            }
+            ("windows", "linux") => {
+                helpers::tip("For Linux cross-compilation on Windows, consider using WSL or containers");
+            }
+            (_, _) => {
+                helpers::tip(format!("Install cross-compilation tools for {} → {}", host_os, target_os));
+            }
+        }
     }
 
     /// Determine if a container build should be used for this target
