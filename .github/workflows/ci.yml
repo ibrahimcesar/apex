@@ -149,6 +149,110 @@ jobs:
             target/${{ matrix.target }}/release/xcargo${{ matrix.os == 'windows-latest' && '.exe' || '' }}
           if-no-files-found: error
 
+  zig-cross-compilation:
+    name: Zig Cross-Compilation
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-pc-windows-gnu
+            zig_target: x86_64-windows-gnu
+          - os: macos-latest
+            target: x86_64-unknown-linux-gnu
+            zig_target: x86_64-linux-gnu
+          - os: macos-latest
+            target: aarch64-unknown-linux-gnu
+            zig_target: aarch64-linux-gnu
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Zig (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://ziglang.org/download/0.15.2/zig-linux-x86_64-0.15.2.tar.xz
+          tar xf zig-linux-x86_64-0.15.2.tar.xz
+          echo "$(pwd)/zig-linux-x86_64-0.15.2" >> $GITHUB_PATH
+
+      - name: Install Zig (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install zig
+
+      - name: Verify Zig installation
+        run: zig version
+
+      - name: Install xcargo
+        run: cargo install --path .
+
+      - name: Test xcargo doctor
+        run: xcargo doctor || true
+
+      - name: Test Zig cross-compilation
+        run: |
+          # Create a simple test project
+          cargo init --name zig-test-app
+          cd zig-test-app
+
+          # Try building with xcargo using Zig
+          xcargo build --target ${{ matrix.target }} --zig --verbose
+
+      - name: Verify binary was created
+        run: |
+          cd zig-test-app
+          ls -lh target/${{ matrix.target }}/debug/
+
+  container-builds:
+    name: Container Cross-Compilation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Docker installation
+        run: docker info
+
+      - name: Install xcargo
+        run: cargo install --path .
+
+      - name: Test xcargo doctor
+        run: xcargo doctor || true
+
+      - name: Test container-based cross-compilation
+        run: |
+          # Create a simple test project
+          cargo init --name container-test-app
+          cd container-test-app
+
+          # Try building with xcargo using containers
+          xcargo build --target ${{ matrix.target }} --container --verbose
+
+      - name: Verify binary was created
+        run: |
+          cd container-test-app
+          ls -lh target/${{ matrix.target }}/debug/
+          file target/${{ matrix.target }}/debug/container-test-app
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
