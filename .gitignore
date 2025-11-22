@@ -2,7 +2,8 @@
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
+# Note: Cargo.lock IS committed for binary projects like xcargo
+# to ensure reproducible builds across all platforms
 
 # xcargo specific
 /xcargo-cache/
