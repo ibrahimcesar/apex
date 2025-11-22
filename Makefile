@@ -129,6 +129,18 @@ docs-clean: ## 🧹 Clean documentation build
 	rm -rf docs/build docs/.docusaurus docs/.cache-loader
 	@echo "$(GREEN)✅ Documentation cleaned!$(RESET)"
 
+.PHONY: docs-api
+docs-api: ## 📖 Generate API documentation with rustdoc
+	@echo "$(BOLD)$(BLUE)📖 Generating API documentation...$(RESET)"
+	cargo doc --no-deps --document-private-items --all-features
+	@echo "$(GREEN)✅ API documentation generated!$(RESET)"
+	@echo "$(CYAN)Open target/doc/xcargo/index.html to view$(RESET)"
+
+.PHONY: docs-api-open
+docs-api-open: docs-api ## 🌐 Generate and open API documentation
+	@echo "$(BOLD)$(CYAN)🌐 Opening API documentation...$(RESET)"
+	open target/doc/xcargo/index.html || xdg-open target/doc/xcargo/index.html
+
 # ========================================
 # 🔧 Development Commands
 # ========================================
