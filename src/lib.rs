@@ -59,6 +59,9 @@ pub mod output;
 /// Error types
 pub mod error;
 
+/// Build caching
+pub mod cache;
+
 /// Prelude for convenient imports
 pub mod prelude {
     //! Convenient re-exports
