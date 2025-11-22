@@ -39,6 +39,9 @@ Support for Linux, Windows, macOS, mobile (Android/iOS), embedded, and WebAssemb
 ### CI/CD Ready
 Perfect integration with GitHub Actions, GitLab CI, and other CI/CD platforms.
 
+### Extensible
+Powerful plugin system to customize build workflows, add integrations, and extend functionality.
+
 ## Design Philosophy
 
 xcargo follows a simple principle: **cross-compilation should just work**.

@@ -25,6 +25,8 @@ const sidebars: SidebarsConfig = {
         'guides/target-management',
         'guides/cross-compilation',
         'guides/ci-cd-integration',
+        'guides/plugin-quick-start',
+        'guides/plugin-development',
       ],
     },
     {
@@ -70,6 +72,7 @@ const sidebars: SidebarsConfig = {
         'api/target',
         'api/requirements',
         'api/errors',
+        'api/plugins',
       ],
     },
   ],
