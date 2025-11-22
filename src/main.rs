@@ -162,6 +162,9 @@ enum Commands {
         cargo_args: Vec<String>,
     },
 
+    /// Check system setup and diagnose issues
+    Doctor,
+
     /// Show version information
     Version,
 }
@@ -755,6 +758,10 @@ fn run() -> Result<()> {
                     }
                 }
             }
+        }
+
+        Commands::Doctor => {
+            xcargo::doctor::run()?;
         }
 
         Commands::Version => {

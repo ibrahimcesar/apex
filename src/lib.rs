@@ -65,6 +65,9 @@ pub mod cache;
 /// Plugin system for extensibility
 pub mod plugin;
 
+/// System diagnostics
+pub mod doctor;
+
 /// Prelude for convenient imports
 pub mod prelude {
     //! Convenient re-exports
