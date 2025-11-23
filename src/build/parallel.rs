@@ -15,6 +15,8 @@ impl Builder {
         targets: &[String],
         options: &BuildOptions,
     ) -> Result<()> {
+        use crate::output::progress::MultiTargetProgress;
+
         helpers::section(format!("xcargo {} (parallel)", options.operation.as_str()));
         helpers::info(format!(
             "{} for {} targets in parallel",
@@ -22,6 +24,7 @@ impl Builder {
             targets.len()
         ));
 
+        let multi_progress = MultiTargetProgress::new();
         let successes = Arc::new(Mutex::new(Vec::new()));
         let failures = Arc::new(Mutex::new(Vec::new()));
 
@@ -79,12 +82,12 @@ impl Builder {
         let successes = successes.lock().unwrap();
         let failures = failures.lock().unwrap();
 
-        println!("\n");
-        helpers::section("Build Summary");
-        helpers::success(format!("{} target(s) built successfully", successes.len()));
+        // Show summary with elapsed time
+        multi_progress.finish_summary(successes.len(), failures.len());
 
         if !failures.is_empty() {
-            helpers::error(format!("{} target(s) failed", failures.len()));
+            println!();
+            helpers::error("Failed targets:");
             for target in failures.iter() {
                 helpers::error(format!("  - {target}"));
             }

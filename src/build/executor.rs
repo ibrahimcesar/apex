@@ -232,8 +232,15 @@ impl Builder {
             }
         }
 
-        // Build cargo command
-        helpers::progress(format!("Running cargo {}...", options.operation.as_str()));
+        // Build cargo command with progress tracking
+        use crate::output::progress::BuildProgress;
+
+        let progress = match options.operation {
+            super::options::CargoOperation::Build => BuildProgress::compiling(&target.triple),
+            super::options::CargoOperation::Check => BuildProgress::checking(&target.triple),
+            super::options::CargoOperation::Test => BuildProgress::testing(&target.triple),
+        };
+
         let mut cmd = Command::new("cargo");
 
         // Apply Zig environment if using Zig for cross-compilation
@@ -330,12 +337,7 @@ impl Builder {
             .map_err(|e| Error::Build(format!("Failed to execute cargo: {e}")))?;
 
         if status.success() {
-            println!(); // Empty line for spacing
-            helpers::success(format!(
-                "{} completed for {}",
-                options.operation.description(),
-                target.triple
-            ));
+            progress.finish_success();
 
             // Show helpful tips (only for build/test, not check)
             if options.operation != CargoOperation::Check {
@@ -368,12 +370,7 @@ impl Builder {
 
             Ok(())
         } else {
-            println!();
-            helpers::error(format!(
-                "{} failed for target {}",
-                options.operation.description(),
-                target.triple
-            ));
+            progress.finish_error("build failed");
 
             // Provide helpful error context
             if linker.is_none() {
