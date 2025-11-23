@@ -1,0 +1,41 @@
+{
+    "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
+    "version": "0.3.0",
+    "description": "Cross-compilation, zero friction - Rust cross-compilation tool with automatic toolchain management",
+    "homepage": "https://ibrahimcesar.github.io/xcargo",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/ibrahimcesar/xcargo/releases/download/v0.3.0/xcargo-x86_64-pc-windows-msvc.zip",
+            "hash": "sha256:REPLACE_WITH_ACTUAL_SHA256",
+            "extract_dir": "xcargo-x86_64-pc-windows-msvc"
+        }
+    },
+    "bin": "xcargo.exe",
+    "checkver": {
+        "github": "https://github.com/ibrahimcesar/xcargo"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/ibrahimcesar/xcargo/releases/download/v$version/xcargo-x86_64-pc-windows-msvc.zip"
+            }
+        },
+        "hash": {
+            "url": "$url.sha256"
+        }
+    },
+    "notes": [
+        "xcargo requires Rust and cargo to be installed.",
+        "Install Rust: scoop install rustup",
+        "",
+        "For Linux cross-compilation from Windows, install Zig:",
+        "scoop install zig",
+        "",
+        "Quick start:",
+        "  xcargo doctor                                # Check system setup",
+        "  xcargo build --target x86_64-unknown-linux-gnu  # Cross-compile to Linux",
+        "",
+        "Documentation: https://ibrahimcesar.github.io/xcargo"
+    ]
+}

@@ -1,0 +1,30 @@
+# Maintainer: Ibrahim Cesar <email@ibrahimcesar.com>
+# AUR Package for xcargo - Rust cross-compilation tool
+
+pkgname=xcargo-bin
+pkgver=0.3.0
+pkgrel=1
+pkgdesc="Cross-compilation, zero friction - Rust cross-compilation tool with automatic toolchain management"
+arch=('x86_64')
+url="https://ibrahimcesar.github.io/xcargo"
+license=('MIT')
+depends=('cargo' 'rustup')
+optdepends=(
+    'zig: For zero-config Linux cross-compilation'
+    'docker: For container-based cross-compilation'
+    'podman: Alternative to Docker for containers'
+)
+provides=('xcargo')
+conflicts=('xcargo')
+source_x86_64=("https://github.com/ibrahimcesar/xcargo/releases/download/v${pkgver}/xcargo-x86_64-unknown-linux-gnu.tar.xz")
+sha256sums_x86_64=('REPLACE_WITH_ACTUAL_SHA256')
+
+package() {
+    # Install binary
+    install -Dm755 "$srcdir/xcargo" "$pkgdir/usr/bin/xcargo"
+
+    # Install license (if available in release)
+    # install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+# vim:set ts=4 sw=4 et:
