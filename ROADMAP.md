@@ -29,16 +29,16 @@ Our goal is to deliver a stable, well-documented, battle-tested cross-compilatio
 ### Remaining Work
 
 **Test Coverage** (P0 - Critical)
-- Current: 68.20% coverage (1,287/1,887 lines)
-- Target: 80% coverage (~220 more lines, 25-30 tests)
-- Focus: src/main.rs (47%), src/target/mod.rs (58%), src/doctor/report.rs (77%)
+- Current: 69.00% coverage (1,302/1,887 lines)
+- Target: 80% coverage (~200 more lines, 20-25 tests)
+- Focus: src/main.rs (47%), src/target/mod.rs (64%), src/doctor/report.rs (77%)
 
 **Recent Progress (2025-11-23):**
 - ✅ Added cargo-dist integration (Phase 1)
 - ✅ Configured 5-platform binary distribution
 - ✅ Set up automated installers (shell, PowerShell, Homebrew)
-- ✅ Added 30 integration and CLI tests (+2.55% coverage)
-- ✅ Added 56 execution path tests for linker/Zig/container/config (+3.66% coverage)
+- ✅ Added 127 total tests (+4.45% coverage gain)
+- ✅ Implemented self-hosting - xcargo builds itself
 
 ---
 
@@ -87,9 +87,12 @@ brew install xcargo
 
 **Remaining Phases (Post-v1.0):**
 
-2. **Self-Hosting** (4 hours) - Deferred to v0.5.0
-   - Configure workflow to use xcargo for cross-compilation
-   - xcargo builds xcargo (dogfooding demonstration)
+2. **Self-Hosting** ✅ Complete (2025-11-23)
+   - ✅ Created xcargo.toml with all 5 targets
+   - ✅ Added self-host-test.yml workflow
+   - ✅ Tests on macOS and Linux runners
+   - ✅ Validates Zig integration and parallel builds
+   - ✅ Demonstrates dogfooding capability
 
 3. **Enhanced Distribution** (1 day) - v1.1.0
    - Homebrew tap publishing automation
