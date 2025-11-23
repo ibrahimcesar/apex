@@ -27,61 +27,52 @@ _Cross-compilation, zero friction_
 - 🌍 **Many Targets** - Linux, Windows, macOS, WebAssembly, and more
 - 🤖 **CI/CD Ready** - Perfect for GitHub Actions, GitLab CI
 
-## 🚀 Quick Start
+## 📦 Installation
 
-### Installation
+### Quick Install (Recommended)
+
+#### macOS / Linux
 
 ```bash
-# Install from crates.io (recommended)
-cargo install xcargo
-
-# Install with container support
-cargo install xcargo --features container
-
-# Or build from source
-git clone https://github.com/ibrahimcesar/xcargo
-cd xcargo
-cargo build --release --features container
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-installer.sh | sh
 ```
 
-### 🔐 Verifying Downloads
+#### Windows (PowerShell)
 
-All xcargo release binaries are signed with [minisign](https://jedisct1.github.io/minisign/) for authenticity and integrity verification.
+```powershell
+irm https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-installer.ps1 | iex
+```
 
-**Install minisign:**
+### Package Managers
+
+#### Homebrew (macOS / Linux)
+
 ```bash
-# macOS
-brew install minisign
-
-# Linux (Debian/Ubuntu)
-sudo apt install minisign
-
-# Linux (other) or from source
-cargo install minisign-verify
-# Or download from: https://github.com/jedisct1/minisign/releases
-
-# Windows
-scoop install minisign
+brew install ibrahimcesar/tap/xcargo
 ```
 
-**Verify a downloaded binary:**
+#### Cargo (from source)
+
 ```bash
-# Download binary, signature, and checksum from GitHub releases
-wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64
-wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64.minisig
-wget https://github.com/ibrahimcesar/xcargo/releases/download/v0.2.0/xcargo-linux-x86_64.sha256
+# Coming soon: cargo install xcargo
 
-# Verify signature
-minisign -Vm xcargo-linux-x86_64 -P RWRzZS/Coz8XEj1XGXl9P93QnWHHSkqBfByJoX7tTXRJBUMLxR10WbW6
-
-# Verify checksum
-sha256sum -c xcargo-linux-x86_64.sha256
+# Install from GitHub
+cargo install --git https://github.com/ibrahimcesar/xcargo
 ```
 
-**xcargo minisign public key:**
-```
-RWRzZS/Coz8XEj1XGXl9P93QnWHHSkqBfByJoX7tTXRJBUMLxR10WbW6
-```
+### Prebuilt Binaries
+
+Download prebuilt binaries from the [latest release](https://github.com/ibrahimcesar/xcargo/releases/latest):
+
+- **macOS (Apple Silicon)**: [xcargo-aarch64-apple-darwin.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-aarch64-apple-darwin.tar.xz)
+- **macOS (Intel)**: [xcargo-x86_64-apple-darwin.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-apple-darwin.tar.xz)
+- **Linux (glibc)**: [xcargo-x86_64-unknown-linux-gnu.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-unknown-linux-gnu.tar.xz)
+- **Linux (musl)**: [xcargo-x86_64-unknown-linux-musl.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-unknown-linux-musl.tar.xz)
+- **Windows (MSVC)**: [xcargo-x86_64-pc-windows-msvc.zip](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-pc-windows-msvc.zip)
+
+All downloads include SHA256 checksums for verification.
+
+See the full [Installation Guide](https://ibrahimcesar.github.io/xcargo/installation) for more options.
 
 ### Interactive Setup
 

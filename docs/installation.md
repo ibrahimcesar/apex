@@ -6,16 +6,40 @@ sidebar_position: 2
 
 Learn how to install xcargo on your system.
 
-## Prerequisites
+## Quick Install (Recommended)
 
-- **Rust** 1.70 or later
-- **rustup** (for target management)
-- **Git** (for building from source)
+The fastest way to install xcargo is using our installer scripts:
+
+### macOS / Linux
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-installer.sh | sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-installer.ps1 | iex
+```
+
+## Package Managers
+
+### Homebrew (macOS / Linux)
+
+```bash
+# Install from our tap
+brew install ibrahimcesar/tap/xcargo
+```
+
+**Updating:**
+```bash
+brew upgrade xcargo
+```
 
 ## Install from crates.io
 
 :::info Coming Soon
-xcargo is not yet published to crates.io. Use the source installation method below.
+xcargo is not yet published to crates.io. Use one of the installation methods above.
 :::
 
 Once published, you'll be able to install with:
@@ -23,6 +47,20 @@ Once published, you'll be able to install with:
 ```bash
 cargo install xcargo
 ```
+
+## Prebuilt Binaries
+
+Download prebuilt binaries from the [latest release](https://github.com/ibrahimcesar/xcargo/releases/latest):
+
+| Platform | Download |
+|----------|----------|
+| **macOS (Apple Silicon)** | [xcargo-aarch64-apple-darwin.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-aarch64-apple-darwin.tar.xz) |
+| **macOS (Intel)** | [xcargo-x86_64-apple-darwin.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-apple-darwin.tar.xz) |
+| **Linux (glibc)** | [xcargo-x86_64-unknown-linux-gnu.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-unknown-linux-gnu.tar.xz) |
+| **Linux (musl)** | [xcargo-x86_64-unknown-linux-musl.tar.xz](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-unknown-linux-musl.tar.xz) |
+| **Windows (MSVC)** | [xcargo-x86_64-pc-windows-msvc.zip](https://github.com/ibrahimcesar/xcargo/releases/latest/download/xcargo-x86_64-pc-windows-msvc.zip) |
+
+All downloads include SHA256 checksums for verification.
 
 ## Install from Source
 
@@ -48,8 +86,43 @@ xcargo --version
 You should see output like:
 
 ```
-xcargo 0.1.0
+xcargo 0.3.0
 ```
+
+Run system diagnostics to verify your setup:
+
+```bash
+xcargo doctor
+```
+
+Expected output:
+```
+xcargo System Diagnostics
+========================
+
+✓ Rust Toolchain
+  rustc 1.75.0 (stable)
+  cargo 1.75.0
+
+✓ Host Platform
+  x86_64-unknown-linux-gnu
+
+✓ Cross-Compilation Tools
+  zig: 0.11.0 (optional)
+
+System is ready for cross-compilation!
+```
+
+## Prerequisites
+
+xcargo requires these tools to be installed:
+
+| Tool | Required For | Installation |
+|------|--------------|--------------|
+| **cargo** | All builds | Install Rust from [rustup.rs](https://rustup.rs) |
+| **rustup** | Target management | Included with Rust installation |
+| **zig** (optional) | Linux cross-compilation from macOS/Windows | [ziglang.org](https://ziglang.org/download/) |
+| **docker/podman** (optional) | Container-based builds | [docker.com](https://www.docker.com) or [podman.io](https://podman.io) |
 
 ## Platform-Specific Notes
 
@@ -67,20 +140,35 @@ sudo dnf install gcc-aarch64-linux-gnu gcc-arm-linux-gnu mingw64-gcc
 
 ### macOS
 
-On macOS, you can install cross-compilation toolchains via Homebrew:
+On macOS, **Zig** is recommended for Linux cross-compilation (zero-config, no Docker required):
 
 ```bash
-# Install mingw for Windows cross-compilation
-brew install mingw-w64
+# Install Zig (recommended)
+brew install zig
 
-# For Linux cross-compilation (optional)
-brew tap messense/macos-cross-toolchains
-brew install aarch64-unknown-linux-gnu
+# Optional: Install mingw for Windows cross-compilation
+brew install mingw-w64
+```
+
+With Zig installed, you can cross-compile to Linux targets without any additional setup:
+
+```bash
+xcargo build --target x86_64-unknown-linux-gnu
+xcargo build --target aarch64-unknown-linux-gnu
 ```
 
 ### Windows
 
-xcargo can be used on Windows, though cross-compilation from Windows has some limitations. Consider using WSL2 for the best experience.
+On Windows, **Zig** is recommended for Linux cross-compilation:
+
+```powershell
+# Install Zig using Scoop
+scoop install zig
+
+# Or download from: https://ziglang.org/download/
+```
+
+Alternatively, consider using WSL2 for the best cross-compilation experience.
 
 ## Next Steps
 
